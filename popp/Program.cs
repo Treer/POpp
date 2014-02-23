@@ -1,8 +1,8 @@
 ﻿// .po preprocessor
 //
-// This file is GPL
+// This file is MIT X11 license
 //
-// It contains code modified from the mono project under GPL licence.
+// It contains code modified from the mono project under MIT X11 license.
 namespace popp
 {
     using System;
