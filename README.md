@@ -9,9 +9,13 @@ such as $define, $if, and $elseif etc.
 #### Currently:
   * It does **not** support conditional directives.
   * It does **not** support references in or to plural forms.
+  * An executable for Windows can be [downloaded here](https://mega.co.nz/#!OJNxkTAA!iOqnPkSaZVIqU6oqq4iVqEB54olmGjNTB5VOE6_UW1w).
+   - md5: ae9cdcee73bb79508b8aa2d82d01a425 *popp.exe
+   - sha256: 7885f3123efa744eb926d8ef6c2a70e05d7a9187757df17b12bd9848d5f44ec1 *popp.exe
+  * I haven't tried this in a real project environment yet, it's only been tested with the automatic test cases - take care.
 
 #### Language:
-  * Written in C#, currently not tested against Mono.
+  * C#, currently not tested against Mono.
   * popp was written with v3.5 of the .Net framework
   * UnitTests were written with v4.5 of the .Net framework.
 
@@ -20,6 +24,9 @@ such as $define, $if, and $elseif etc.
 Expands .po msgstrs which reference other msgstr values via a curly brace
 notation, for example `{id:ProductName_short}` will be expanded to the msgstr
 which has the msgid of `ProductName_short`.
+
+#### Usage:                                                                                                                                                                         
+    popp [options] source.popp [dest.po]
 
 #### Brace notation:
 
