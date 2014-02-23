@@ -8,18 +8,13 @@ to other msgstrs. In future it may support conditional directives
 such as #define, $if, and $elseif etc. but
 
 Currently:
-  It does NOT support conditional directives.
-  It does NOT support plural forms.
-
-Licence:
-  This project is GPL, it contains a small amount of code obtained
-  from the mono project under GPL licence. If I remove that code
-  then it can be released under other licences, however given that
-  PO files are a Gnu initiative, I don't yet see any advantage in
-  it being released under other licences.
+  It does *not* support conditional directives.
+  It does *not* support references in or to plural forms.
 
 Language:
   Written in C#, currently not tested against Mono.
+  popp was written with v3.5 of the .Net framework
+  UnitTests were written with v4.5 of the .Net framework.
 
 ------------------------------------------------------------------------------
 Documentation:
