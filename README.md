@@ -1,23 +1,24 @@
 # popp - a PO file preprocessor 
-For Gnu .po language translation files. See the [GNU gettext documentation](https://www.gnu.org/software/gettext/manual/html_node/index.htm) for information about PO files:
+For Gnu .po language translation files. See the [GNU gettext documentation](https://www.gnu.org/software/gettext/manual/html_node/index.html) for information about PO files.
 
 
 This preprocessor allows msgstrs to contain expandable references
-to other msgstrs. In future it may support conditional directives
-such as $define, $if, and $elseif etc.
+to other msgstrs, and should work well with .PO file editors. In 
+future it may support conditional directives such as $define, $if, 
+and $include etc.
 
 #### Currently:
-  * It does **not** support conditional directives.
-  * It does **not** support references in or to plural forms.
+  * It does *not* support conditional directives.
+  * It does *not* support references to or from plural forms, though the rest of the file will be processed.
   * An executable for Windows can be [downloaded here](https://mega.co.nz/#!OJNxkTAA!iOqnPkSaZVIqU6oqq4iVqEB54olmGjNTB5VOE6_UW1w).
    - md5: ae9cdcee73bb79508b8aa2d82d01a425 *popp.exe
    - sha256: 7885f3123efa744eb926d8ef6c2a70e05d7a9187757df17b12bd9848d5f44ec1 *popp.exe
   * I haven't tried this in a real project environment yet, it's only been tested with the automatic test cases - take care.
 
 #### Language:
-  * C#, currently not tested against Mono.
-  * popp was written with v3.5 of the .Net framework
-  * UnitTests were written with v4.5 of the .Net framework.
+  * C#, compiles with Mono and Visual Studio, but the UnitTests project is a Visual Studio one (VS Express 2013).
+  * popp requires v3.5 of the .Net framework.
+  * UnitTests require v4.0 of the .Net framework.
 
 ## Documentation:
 
@@ -42,23 +43,29 @@ Output files are written in UTF-8
 
 #### Options:
 
- * -nLF
+ * -nl, --nLF
   - Use LF for newlines
 
- * -nCRLF
+ * -nc, --nCRLF
   - Use CRLF for newlines
 
- * -nSource
+ * -ns, --nSource
   - _[Default]_ Determines LF or CRLF for newlines by what the source file
     uses
 
- * -silent
+ * -s, --silent
   - Suppresses console error messages and info messages
 
- * -Dsym
+ * -c, --count    
+  - Returns the number of references contained in the source file, regardless
+    of whether the references are valid and can be expanded. No output file 
+    is written.
+    WARNING: Plural forms are not supported and references contained in 
+    plural-form msgstrs are not counted.
+	
+ * -dSym
   - _[Not implemented]_ Defines a symbol for evaluation of conditional
-    expressions such as $IF and $ELSEIF
-
+    expressions such as $if and $elseif
 
 #### Returns:
  * 0 - Success

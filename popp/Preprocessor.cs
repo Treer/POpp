@@ -6,7 +6,6 @@
     using System.IO;
     using System.Linq;
     using System.Text;
-    //using System.Threading.Tasks;
 
     class Preprocessor
     {
@@ -17,14 +16,55 @@
         internal const string cReferenceSignature_Start = "{id:";
         internal const string cReferenceSignature_End = "}";
 
-        Options _options;
+        readonly Options _options;
         int errorLevel = 0;
 
         /// <summary>
-        /// 
+        /// Gets the number of references contained in the input file, regardless
+        /// of whether the references can be successfully expanded.
         /// </summary>
-        /// <param name="input"></param>
-        /// <param name="output"></param>
+        /// <returns>the number of references, or -1 if error</returns>
+        public int CountReferences(Stream input)
+        {
+            int result = 0;
+
+            try {
+                StreamReader inputReader = new StreamReader(input);
+
+                // Build a list of information about each line
+                IEnumerable<LineInfo> lines = BuildListOfLines(inputReader);
+
+                // Build a dictionary of translation items
+                Dictionary<string/*MsgInfo.UniqueID*/, MsgInfo> keyValues = BuildMsgInfoDictionary(lines);
+
+                // Count the references in the list of msgstrs
+                foreach (MsgInfo msgInfo in keyValues.Values) {
+
+                    ReferenceInfo reference;
+                    int nextRefSearchPos = 0;
+                    while ((reference = GetFirstReference(msgInfo.msgstr, nextRefSearchPos)) != null) {
+                        result++;
+                        nextRefSearchPos = reference.StartIndex + reference.Length;
+                    }
+                }
+
+                DisplayInfo("");
+                DisplayInfo(result + " references were found.");
+                DisplayInfo("");
+
+            } catch (Exception ex) {
+
+                ErrorEncountered("Unexpected internal error - " + ex);
+                result = -1;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Run the preprocessor
+        /// </summary>
         /// <returns>errorLevel, 0 for success</returns>
         public int Process(Stream input, Stream output) 
         {
@@ -32,13 +72,13 @@
             errorLevel = 0;
 
             try {
+                StreamReader inputReader = new StreamReader(input);
+
                 // Unicode BOM causes syntax errors in the gettext utils
                 Encoding utf8WithoutBom = new UTF8Encoding(false);
                 TextWriter outputWriter = new StreamWriter(output, utf8WithoutBom);
 
-                StreamReader inputReader = new StreamReader(input);
-
-                // determine while newline character to use.
+                // determine which newline character to use.
                 string newline = cNewline_Default;
                 switch (_options.NewlinePreference) {
                     case NewLineOptions.SameAsSource:
@@ -70,27 +110,25 @@
                 outputWriter.NewLine = newline;
 
 
-                int line_num = 0;
-                string line;
-                List<LineInfo> lines = new List<LineInfo>();
-                while ((line = inputReader.ReadLine()) != null) {
-                    line_num++;
-                    LineType lineType = DetermineLineType(line, line_num);
-                    lines.Add(new LineInfo(lineType, line_num, line));
-                    //outputWriter.WriteLine(line);
-                }
+                // Build a list of information about each line
+                IEnumerable<LineInfo> lines = BuildListOfLines(inputReader);
 
-                Dictionary<string/*msgid*/, MsgInfo> keyValues = BuildMsgInfoDictionary(lines);
+                // Todo:
+                // This is where we'll apply the $if $else $include etc directives
+                // lines = ApplyDirectives(lines);
+
+                // Build a dictionary of translation items
+                Dictionary<string/*MsgInfo.UniqueID*/, MsgInfo> keyValues = BuildMsgInfoDictionary(lines);
 
                 int expandedReferenceCount;
                 unexpandableReferenceCount = ExpandMsgstrs(keyValues, out expandedReferenceCount);
 
-                // Write out the file with adjusted msgstr entries
+                // Write out the file with any adjusted msgstr entries...
 
-                // build a second dictionary of the MsgInfo list, indexed by the linenumber
-                Dictionary<int/*msgstr_lineNumber*/, MsgInfo> newMsgstrLines = new Dictionary<int, MsgInfo>();
+                // build a second dictionary of the msgstrs we are changing, indexed by the linenumber
+                Dictionary<int/*msgstr_lineNumber*/, MsgInfo> alteredMsgstrLines = new Dictionary<int, MsgInfo>();
                 foreach (MsgInfo msgInfo in keyValues.Values) {
-                    newMsgstrLines.Add(msgInfo.msgstr_linenumber, msgInfo);
+                    if (msgInfo.msgstr_containsChanges) alteredMsgstrLines.Add(msgInfo.msgstr_linenumber, msgInfo);
                 }
 
                 // Write the lines to the output file, with any adjusted msgstr entries
@@ -105,12 +143,13 @@
 
                         bool replaceLineWithAdjustedMsgstr = false;
                         MsgInfo msgInfo = null;
-                        if (newMsgstrLines.TryGetValue(lineInfo.LineNumber, out msgInfo)) {
-                            // We have our own version of this line, but no need to use it unless
-                            // we've made changes to it.
+                        if (alteredMsgstrLines.TryGetValue(lineInfo.LineNumber, out msgInfo)) {
+                            // We have our own version of this line
                             if (msgInfo.msgstr_containsChanges) replaceLineWithAdjustedMsgstr = true;
                         }
 
+                        // Only change the lines in the file that we need to, so all whitespace and weird user 
+                        // formatting etc will be preserved.
                         if (replaceLineWithAdjustedMsgstr) {
                             outputWriter.WriteLine("msgstr \"" + msgInfo.msgstr + "\"");
                             linesToSkip = msgInfo.msgstr_lineCount;
@@ -170,21 +209,35 @@
         }
 
 
+        IEnumerable<LineInfo> BuildListOfLines(StreamReader inputReader)
+        {
+            int line_num = 0;
+            string line;
+            List<LineInfo> result = new List<LineInfo>();
+            while ((line = inputReader.ReadLine()) != null) {
+                line_num++;
+                LineType lineType = DetermineLineType(line, line_num);
+                result.Add(new LineInfo(lineType, line_num, line));
+            }
+
+            return result;
+        }
+
 
         enum LineInfoState
         {
             FinishedEntry, // looking for the next entry
             AddingMsgid,   // have found the msgid, but it might be split over multiple lines
             AddingMsgstr,  // have found the msgstr, but it might be split over multiple lines
-            AddingMsgctxt // have found a msgctxt, but it might be split over multiple lines
+            AddingMsgctxt  // have found a msgctxt, but it might be split over multiple lines
         }
 
         /// <summary>
         /// Parses the PO format into a dictionary of entries.
         /// </summary>
-        Dictionary<string/*msgid*/, MsgInfo> BuildMsgInfoDictionary(IEnumerable<LineInfo> lines)
+        Dictionary<string/*MsgInfo.UniqueID*/, MsgInfo> BuildMsgInfoDictionary(IEnumerable<LineInfo> lines)
         {
-            Dictionary<string/*msgid*/, MsgInfo> result = new Dictionary<string, MsgInfo>();
+            Dictionary<string/*MsgInfo.UniqueID*/, MsgInfo> result = new Dictionary<string, MsgInfo>();
 
             // Add a whitespace entry to the end of the list, so our state machine can rely on
             // whitespace as an end-of-entry marker.
@@ -194,6 +247,19 @@
             MsgInfo newEntry = new MsgInfo();
 
             foreach (LineInfo line in linesPlusWhitespace) {
+
+                // The state machine is small enough to do with a switch.
+                //
+                // The .PO formats is roughly like this:
+                //
+                //    Whitespace, followed by
+                //    [Optional]# Comments, followed by
+                //    [Optional]msgctxt, optionally followed by multi-line context string, followed by
+                //    msgid, optionally followed by multi-line id string, followed by
+                //    [Optional]msgid_plural - I'm not supporting plural forms, followed by
+                //    msgstr, optionally followed by multi-line msg string, followed by
+                //    [Optional]msgstr[x] - I'm not supporting plural forms, followed by
+                //    EOF or Whitespace
                 switch (state) {
                     case LineInfoState.FinishedEntry:
                         // We're looking for the start of the next entry
@@ -240,7 +306,11 @@
                         
                         } else if (line.Type == LineType.Msgid) {
                             // We can't have two msgids in a row!
-                            ErrorEncountered(line.LineNumber, "Unexpected msgid");
+                            if (line.Line.StartsWith("msgid_plural", true, CultureInfo.InvariantCulture)) {
+                                ErrorEncountered(line.LineNumber, "Multiple msgids encountered, PO plural-forms are not currently supported :(");
+                            } else {
+                                ErrorEncountered(line.LineNumber, "Unexpected msgid");
+                            }
                         }
                         break;
 
@@ -286,7 +356,7 @@
             int quotePosRight = encodedLine.LastIndexOf('"');
             
             if (quotePosLeft < 0 || quotePosRight <= quotePosLeft) {
-                ErrorEncountered(lineNumber, "Missing quotemarks");
+                ErrorEncountered(lineNumber, "Missing quotemarks - very bad - line will be missing from output");
 
             } else {
                 result = encodedLine.Substring(quotePosLeft + 1, quotePosRight - quotePosLeft - 1);

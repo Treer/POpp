@@ -26,6 +26,7 @@ namespace popp
             {
                 switch (args[i].ToLower())
                 {
+                    case "--help":
                     case "-h":
                     case "/h":
                     case "-?":
@@ -33,6 +34,8 @@ namespace popp
                         ShowUsage();
                         return (int)ErrorLevel.Success;
 
+
+                    case "--nlf":
                     case "-nlf":
                     case "/nlf":
                     case "-nl":
@@ -40,6 +43,7 @@ namespace popp
                         options.NewlinePreference = NewLineOptions.LF;
                         break;
 
+                    case "--ncrlf":
                     case "-ncrlf":
                     case "/ncrlf":
                     case "-nc":
@@ -47,6 +51,7 @@ namespace popp
                         options.NewlinePreference = NewLineOptions.CRLF;
                         break;
 
+                    case "--nsource":
                     case "-nsource":
                     case "/nsource":
                     case "-ns":
@@ -54,11 +59,20 @@ namespace popp
                         options.NewlinePreference = NewLineOptions.SameAsSource;
                         break;
 
+                    case "--silent":
                     case "-silent":
                     case "/silent":
                     case "-s":
                     case "/s":
                         options.Silent = true;
+                        break;
+
+                    case "--count":
+                    case "-count":
+                    case "/count":
+                    case "-c":
+                    case "/c":
+                        options.CountReferences = true;
                         break;
 
                     default:
@@ -110,25 +124,28 @@ namespace popp
 
             try {
                 source = new FileStream(sname, FileMode.Open, FileAccess.Read);
-                dest = new FileStream(dname, FileMode.Create, FileAccess.Write);
+                if (!options.CountReferences) {
+                    dest = new FileStream(dname, FileMode.Create, FileAccess.Write);
+                } else {
+                    // When counting references in the input file we don't need an
+                    // output file - the count result is returned as the errorLevel.
+                }
                 
-            } catch (Exception e) {
-                Console.WriteLine("Error: {0}", e.Message);
+            } catch (Exception ex) {
+
+                Console.WriteLine("Error: {0}", ex.Message);
                 if (source != null) source.Close();
                 if (dest != null)   dest.Close();
-
-                // since we're not first reading all entries in source, we may get a
-                // read failure after we're started writing to the destination file
-                // and leave behind a broken resources file, so remove it here
-                try {
-                    File.Delete(dname);
-                } catch { }
 
                 return (int)ErrorLevel.FatalError_InvalidArgs;
             }
 
             Preprocessor pp = new Preprocessor(options);
-            return pp.Process(source, dest);
+            if (options.CountReferences) {
+                return pp.CountReferences(source);
+            } else {
+                return pp.Process(source, dest);
+            }
         }
 
         private static bool RunningOnUnix
@@ -159,10 +176,12 @@ namespace popp
         static void ShowUsage()
         {
 
-            string Usage = cProgramNameFull + " " + cProgramVersion + 
+            string Usage = cProgramNameFull + " " + cProgramVersion +
                 @"
+ (Available from github.com/Treer/POpp)
+
 Usage:
-		popp [options] source.popp [dest.po]";
+    popp [options] source.popp [dest.po]";
             Usage += @"
 
 Expands .po msgstrs which reference other msgstr values via a curly brace
@@ -178,8 +197,8 @@ Brace notation:
     references can be escaped with a backslash, e.g. \{id:msgid} is ignored.
 
 WARNING: Plural forms are not supported, the file can still be processed,
-however lines begining with ""msgstr[n]"" will not have their content expanded,
-and plural forms cannot be referenced with the brace notation.
+however lines begining with ""msgstr[n]"" will not have their content 
+expanded, and plural forms cannot be referenced with the brace notation.
 
 Output files are written in UTF-8
 
@@ -189,18 +208,25 @@ Output files are written in UTF-8
 
 Options:
 
--nLF
+-nl, --nLF
     Use LF for newlines
 
--nCRLF
+-nc, --nCRLF
     Use CRLF for newlines 
     
--nSource
+-ns, --nSource
     [Default] Determines LF or CRLF for newlines by what the source file
     uses.
 
--silent
+-s, --silent
     Suppresses console error messages and info messages.
+
+-c, --count    
+    Returns the number of references contained in the source file, regardless
+    of whether the references are valid and can be expanded. No output file 
+    is written.
+    WARNING: Plural forms are not supported and references contained in 
+    plural-form msgstrs are not counted.
 
 -D<sym>
     [Not implemented] Defines a symbol for evaluation of conditional 

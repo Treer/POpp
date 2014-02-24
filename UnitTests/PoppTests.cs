@@ -46,6 +46,20 @@
             Assert.IsTrue(FileCompare("../../testdata/test_detectcrlf_result.po", "../../testdata/test_crlf_expectedresult.po"), "test_detectcrlf_result.po does not match test_crlf_expectedresult.po");
         }
 
+        [TestMethod]
+        public void CountReferences()
+        {
+            // Test that the --count option correctly counts the number of references in the file
+            int result = Program.Main(new string[] { "--count", "../../testdata/test.po" });
+            Assert.AreEqual(13, result, "There are 13 references in the test file, but popp returned: " + result);
+
+            // --count will fail on plural forms, because the program ignores them, but test the failure anyway.
+            // The test_plurals.po file contains two more references than the test.po file
+            result = Program.Main(new string[] { "--count", "../../testdata/test_plurals.po" });
+            Assert.AreEqual(13, result, "There are 15 references in the test file, but popp will only see 13 of them, it returned: " + result);
+        }
+
+
         // This method accepts two strings the represent two files to 
         // compare. A return value of 0 indicates that the contents of the files
         // are the same. A return value of any other value indicates that the 

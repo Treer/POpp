@@ -12,5 +12,6 @@
     {
         public NewLineOptions NewlinePreference;
         public bool Silent;
+        public bool CountReferences;
     }
 }
