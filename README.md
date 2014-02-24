@@ -10,9 +10,9 @@ and $include etc.
 #### Currently:
   * It does *not* support conditional directives.
   * It does *not* support references to or from plural forms, though the rest of the file will be processed.
-  * An executable for Windows can be [downloaded here](https://mega.co.nz/#!OJNxkTAA!iOqnPkSaZVIqU6oqq4iVqEB54olmGjNTB5VOE6_UW1w).
-   - md5: ae9cdcee73bb79508b8aa2d82d01a425 *popp.exe
-   - sha256: 7885f3123efa744eb926d8ef6c2a70e05d7a9187757df17b12bd9848d5f44ec1 *popp.exe
+  * An executable for Windows can be [downloaded here](https://mega.co.nz/#!jN02nTya!-u0OEfuKOuq-dZ79kFH8oIPfWMM7U4M4h74s5JR5rGQ).
+   - md5: ce21d05523c066f9380392c9ee3ceb57 *popp.exe
+   - sha256: 6d425a25092fe3fe5eda88f072c162bd6796d6d48c1a52cb28a3f0d89179351f *popp.exe
   * I haven't tried this in a real project environment yet, it's only been tested with the automatic test cases - take care.
 
 #### Language:

@@ -13,7 +13,7 @@ namespace popp
 
     public class Program
     {
-        internal const string cProgramVersion = "v0.1";
+        internal const string cProgramVersion = "v0.11";
         internal const string cProgramNameShort = "popp";
         internal const string cProgramNameFull = "PO preprocessor";
 
