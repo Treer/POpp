@@ -26,11 +26,11 @@ which can be converted automatically to this:
 In future, popp may also support $include and conditional directives such as $define, $if, $else etc.
 
 #### Currently:
-  * It does *not* support conditional directives.
-  * It does *not* support references to or from plural forms, though the rest of the file will be processed.
-  * An executable for Windows can be [downloaded here](https://mega.co.nz/#!zYkiSDIA!zzQkqeOChgqUiUYsXKQDNaW1X0ZMdw2suyYrrbtUFt4).
+  * **The Windows executable can be [downloaded here](https://mega.co.nz/#!zYkiSDIA!zzQkqeOChgqUiUYsXKQDNaW1X0ZMdw2suyYrrbtUFt4)** (v0.12)
    - md5: f60c75ad0efeb28194430cd62ab0a9ce *popp.exe
    - sha256: 6ad63858827c9bd92282136fad26f831c74489f25dd23aa1801bb88bf9c0a134 *popp.exe
+  * It does *not* support conditional directives.
+  * It does *not* support references to or from plural forms, though the rest of the file will be processed.
   * I haven't tried this in a real project environment yet, it's only been tested with the automatic test cases - take care.
 
 #### Language:
