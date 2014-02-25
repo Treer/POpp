@@ -5,6 +5,7 @@
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     using popp;
+    using System.Diagnostics;
 
 
     [TestClass]
@@ -65,6 +66,27 @@
             // The test_plurals.po file contains two more references than the test.po file
             result = Program.Main(new string[] { "--count", "../../testdata/test_plurals.po" });
             Assert.AreEqual(17, result, "There are 19 references in the test file, but popp will only see 17 of them, it returned: " + result);
+        }
+
+        [TestMethod]
+        public void StdinAndStdout()
+        {
+            File.Delete("../../testdata/test_result.po");
+            File.Delete("../../testdata/test_crlf_result.po");
+
+            // newline-autodetection will fail on stdin, and default to CRLF
+            string strCmdText = "popp < ../../testdata/test.po > ../../testdata/test_crlf_result.po";
+            Process shellCommand = Process.Start("CMD.exe", "/C " + strCmdText);
+            shellCommand.WaitForExit();
+            Assert.IsTrue(FileCompare("../../testdata/test_crlf_result.po", "../../testdata/test_crlf_expectedresult.po"), "test_crlf_result.po does not match test_crlf_expectedresult.po");
+
+            /* This test fails on the unicode chars because the console is the wrong encoding - not sure what to do about it             
+            // newline-autodetection will not fail on a file
+            strCmdText = "popp ../../testdata/test.po - > ../../testdata/test_result.po";
+            shellCommand = Process.Start("CMD.exe", "/C " + strCmdText);
+            shellCommand.WaitForExit();
+            Assert.IsTrue(FileCompare("../../testdata/test_result.po", "../../testdata/test_expectedresult.po"), "test_result.po does not match test_expectedresult.po");
+            */
         }
 
 

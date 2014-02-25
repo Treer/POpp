@@ -9,10 +9,6 @@
 
     class Preprocessor
     {
-        internal const string cNewline_LF   = "\n";
-        internal const string cNewline_CRLF = "\r\n";
-        internal const string cNewline_Default = cNewline_CRLF;
-
         internal const string cReferenceSignature_Start = "{id:";
         internal const string cReferenceSignature_End = "}";
 
@@ -24,13 +20,11 @@
         /// of whether the references can be successfully expanded.
         /// </summary>
         /// <returns>the number of references, or -1 if error</returns>
-        public int CountReferences(Stream input)
+        public int CountReferences(TextReader inputReader)
         {
             int result = 0;
 
             try {
-                StreamReader inputReader = new StreamReader(input);
-
                 // Build a list of information about each line
                 IEnumerable<LineInfo> lines = BuildListOfLines(inputReader);
 
@@ -66,50 +60,12 @@
         /// Run the preprocessor
         /// </summary>
         /// <returns>errorLevel, 0 for success</returns>
-        public int Process(Stream input, Stream output) 
+        public int Process(TextReader inputReader, TextWriter outputWriter) 
         {
             int unexpandableReferenceCount = 0;
             errorLevel = 0;
 
             try {
-                StreamReader inputReader = new StreamReader(input);
-
-                // Unicode BOM causes syntax errors in the gettext utils
-                Encoding utf8WithoutBom = new UTF8Encoding(false);
-                TextWriter outputWriter = new StreamWriter(output, utf8WithoutBom);
-
-                // determine which newline character to use.
-                string newline = cNewline_Default;
-                switch (_options.NewlinePreference) {
-                    case NewLineOptions.SameAsSource:
-                        // lookahead in inputReader to see whether the line is broken with LF or CRLF
-                        if (input.CanSeek) {
-                            long startPosition = input.Position;
-                            int peekedChar;
-                            while ((peekedChar = input.ReadByte()) != -1) {
-                                if (peekedChar == (int)('\n')) {
-                                    // We encountered a LF
-                                    newline = cNewline_LF;
-                                    break;
-                                } else if (peekedChar == (int)('\r')) {
-                                    // We encountered a CR
-                                    newline = cNewline_CRLF;
-                                    break;
-                                }
-                            }
-                            input.Seek(startPosition, SeekOrigin.Begin);
-                        }
-                        break;
-                    case NewLineOptions.LF:
-                        newline = cNewline_LF;
-                        break;
-                    case NewLineOptions.CRLF:
-                        newline = cNewline_CRLF;
-                        break;
-                }
-                outputWriter.NewLine = newline;
-
-
                 // Build a list of information about each line
                 IEnumerable<LineInfo> lines = BuildListOfLines(inputReader);
 
@@ -211,7 +167,7 @@
         }
 
 
-        IEnumerable<LineInfo> BuildListOfLines(StreamReader inputReader)
+        IEnumerable<LineInfo> BuildListOfLines(TextReader inputReader)
         {
             int line_num = 0;
             string line;
@@ -517,7 +473,8 @@
         void ErrorEncountered(int lineNumber, string message)
         {
             if (!_options.Quiet) {
-                if (lineNumber < 1) {
+                if (lineNumber < 1) {   
+                    // todo: write this to stderr   
                     Console.WriteLine("Error: " + message);
                 } else {
                     Console.WriteLine("Error on line " + lineNumber + ": " + message);

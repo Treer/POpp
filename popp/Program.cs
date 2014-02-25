@@ -10,6 +10,7 @@ namespace popp
     using System.Collections.Generic;
     using System.IO;
     using System.Resources;
+    using System.Text;
 
     /// <summary>
     /// Handles the user interface. i.e. deals with the commandline args
@@ -20,6 +21,10 @@ namespace popp
         internal const string cProgramVersion = "v0.12";
         internal const string cProgramNameShort = "popp";
         internal const string cProgramNameFull = "PO preprocessor";
+
+        internal const string cNewline_LF = "\n";
+        internal const string cNewline_CRLF = "\r\n";
+        internal const string cNewline_Default = cNewline_CRLF;
 
         public static int Main(string[] args)
         {
@@ -111,13 +116,37 @@ namespace popp
                             // move to next arg, since we assume that one holds
                             // the name of the output file
                             i++;
-                            resInf.OutputFileName = Path.GetFullPath(args[i]);
+
+                            if (args[i] == "-") {
+                                // specifying the last filename as '-' will override the default 
+                                // behaviour of using a default named output file, will use stdout instead
+                                resInf.OutputFileName = String.Empty;
+                            } else {
+                                resInf.OutputFileName = Path.GetFullPath(args[i]);
+                            }
                         }
                         else
                         {
                             resInf.InputFileName = Path.GetFullPath(args[i]);
-                            resInf.OutputFileName = Path.ChangeExtension(resInf.InputFileName,
-                                "po");
+                            resInf.OutputFileName = Path.ChangeExtension(resInf.InputFileName, "po");
+
+                            if (resInf.InputFileName == resInf.OutputFileName) {
+                                // The input file already had a .po extension! Our output file will fail to open
+
+                                if (options.CountReferences) {
+                                    // When counting references in the input file we don't need an
+                                    // output file - the count result is returned as the errorLevel.
+                                } else {
+                                    Console.WriteLine(
+                                        "Error: When only a source file is provided, popp will assume a .po extension\r\n" +
+                                        "       for the output file, but this input file already has a .po extension.\r\n\r\n" +
+                                        "       If you want the output sent to stdout instead, then specify a hyphen (-)\r\n" +
+                                        "       as the output file."
+                                    );
+                                    return (int)ErrorLevel.FatalError_InvalidArgs;
+                                }
+                            }
+
                         }
                         inputFiles.Add(resInf);
                         break;
@@ -126,8 +155,29 @@ namespace popp
 
             if (inputFiles.Count == 0)
             {
-                ShowUsage();
-                return (int)ErrorLevel.FatalError_InvalidArgs;
+                // no files were specified, assume they want to use stdin/stdout
+
+                bool stdInputAvailable;
+                try {
+                    stdInputAvailable = Console.KeyAvailable;
+                } catch {
+                    // Apparently Console.KeyAvailable can throw an exception if the stdin is coming from a file
+                    // See https://stackoverflow.com/questions/3961542/checking-standard-input-in-c-sharp
+                    stdInputAvailable = true;
+                }
+
+                if (stdInputAvailable) {
+
+                    TaskInfo resInf = new TaskInfo();
+                    resInf.InputFileName = String.Empty;
+                    resInf.OutputFileName = String.Empty;
+                    inputFiles.Add(resInf);
+
+                } else {
+
+                    ShowUsage();
+                    return (int)ErrorLevel.FatalError_InvalidArgs;
+                }
             }
 
             foreach (TaskInfo res in inputFiles)
@@ -141,32 +191,84 @@ namespace popp
 
         static int PreprocessFile(string sname, string dname, Options options)
         {
-            FileStream source = null;
-            FileStream dest = null;
+            TextReader inputReader;
+            TextWriter outputWriter = null;
 
+            FileStream sourceStream = null;
+            FileStream destStream = null;
             try {
-                source = new FileStream(sname, FileMode.Open, FileAccess.Read);
-                if (!options.CountReferences) {
-                    dest = new FileStream(dname, FileMode.Create, FileAccess.Write);
+
+                if (sname == String.Empty) {
+                    inputReader = Console.In;
                 } else {
+                    sourceStream = new FileStream(sname, FileMode.Open, FileAccess.Read);
+                    inputReader = new StreamReader(sourceStream);
+                }
+
+                if (options.CountReferences) {
                     // When counting references in the input file we don't need an
                     // output file - the count result is returned as the errorLevel.
+                } else {
+                    if (dname == String.Empty) {
+                        outputWriter = Console.Out;
+                        options.Quiet = true; // Don't output info messages in the middle of the file ;)
+                    } else {
+
+                        // Unicode BOM causes syntax errors in the gettext utils
+                        Encoding utf8WithoutBom = new UTF8Encoding(false);
+
+                        outputWriter = new StreamWriter(
+                            new FileStream(dname, FileMode.Create, FileAccess.Write),
+                            utf8WithoutBom
+                        );
+                    }
+
+                    // determine which newline character to use.
+                    string newline = cNewline_Default;
+                    switch (options.NewlinePreference) {
+                        case NewLineOptions.SameAsSource:
+                            // lookahead in inputReader to see whether the line is broken with LF or CRLF
+                            if (sourceStream != null && sourceStream.CanSeek) {
+                                long startPosition = sourceStream.Position;
+                                int peekedChar;
+                                while ((peekedChar = sourceStream.ReadByte()) != -1) {
+                                    if (peekedChar == (int)('\n')) {
+                                        // We encountered a LF
+                                        newline = cNewline_LF;
+                                        break;
+                                    } else if (peekedChar == (int)('\r')) {
+                                        // We encountered a CR
+                                        newline = cNewline_CRLF;
+                                        break;
+                                    }
+                                }
+                                sourceStream.Seek(startPosition, SeekOrigin.Begin);
+                            }
+                            break;
+                        case NewLineOptions.LF:
+                            newline = cNewline_LF;
+                            break;
+                        case NewLineOptions.CRLF:
+                            newline = cNewline_CRLF;
+                            break;
+                    }
+                    outputWriter.NewLine = newline;
                 }
-                
+
             } catch (Exception ex) {
 
                 Console.WriteLine("Error: {0}", ex.Message);
-                if (source != null) source.Close();
-                if (dest != null)   dest.Close();
+                if (sourceStream != null) sourceStream.Close();
+                if (destStream   != null) destStream.Close();
 
                 return (int)ErrorLevel.FatalError_InvalidArgs;
             }
 
             Preprocessor pp = new Preprocessor(options);
             if (options.CountReferences) {
-                return pp.CountReferences(source);
+                return pp.CountReferences(inputReader);
             } else {
-                return pp.Process(source, dest);
+                return pp.Process(inputReader, outputWriter);
             }
         }
 
