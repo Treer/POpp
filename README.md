@@ -53,13 +53,17 @@ Output files are written in UTF-8
   - _[Default]_ Determines LF or CRLF for newlines by what the source file
     uses
 
- * -s, --silent
+ * -q, --quiet
   - Suppresses console error messages and info messages
 
+ * -s, --sensitive, --casesensitive
+  - The msgids inside curly-brace-references are matched case-insensitively 
+    by default, the --sensitive option expands case-sensitive matches only.
+  
  * -c, --count    
   - Returns the number of references contained in the source file, regardless
     of whether the references are valid and can be expanded. No output file 
-    is written.
+    is written. Can be used to check for misspelled msgids, but
     WARNING: Plural forms are not supported and references contained in 
     plural-form msgstrs are not counted.
 	

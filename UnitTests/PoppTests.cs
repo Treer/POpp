@@ -20,6 +20,14 @@
         }
 
         [TestMethod]
+        public void CaseSensitivity()
+        {
+            // Test the case-sensitive option
+            int result = Program.Main(new string[] {"--sensitive", "../../testdata/test.po", "../../testdata/test_result.po" });
+            Assert.AreEqual(-6, result, "There are 6 unexpandable references in the test file (one due to mismatched case), but popp returned: " + result);
+        }
+
+        [TestMethod]
         public void PluralFormsIgnoredGracefully()
         {
             // Test that plural forms are ignored gracefully
@@ -51,12 +59,12 @@
         {
             // Test that the --count option correctly counts the number of references in the file
             int result = Program.Main(new string[] { "--count", "../../testdata/test.po" });
-            Assert.AreEqual(13, result, "There are 13 references in the test file, but popp returned: " + result);
+            Assert.AreEqual(15, result, "There are 15 references in the test file, but popp returned: " + result);
 
             // --count will fail on plural forms, because the program ignores them, but test the failure anyway.
             // The test_plurals.po file contains two more references than the test.po file
             result = Program.Main(new string[] { "--count", "../../testdata/test_plurals.po" });
-            Assert.AreEqual(13, result, "There are 15 references in the test file, but popp will only see 13 of them, it returned: " + result);
+            Assert.AreEqual(17, result, "There are 19 references in the test file, but popp will only see 17 of them, it returned: " + result);
         }
 
 

@@ -11,7 +11,8 @@
     public struct Options
     {
         public NewLineOptions NewlinePreference;
-        public bool Silent;
+        public bool Quiet;
         public bool CountReferences;
+        public bool CaseSensitiveIDs;
     }
 }

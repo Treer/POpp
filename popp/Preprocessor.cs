@@ -82,7 +82,7 @@
                 string newline = cNewline_Default;
                 switch (_options.NewlinePreference) {
                     case NewLineOptions.SameAsSource:
-                        // lookahead in inputReader to see whether the line is broken with LF or CR
+                        // lookahead in inputReader to see whether the line is broken with LF or CRLF
                         if (input.CanSeek) {
                             long startPosition = input.Position;
                             int peekedChar;
@@ -162,7 +162,9 @@
                 outputWriter.Close();
 
                 DisplayInfo("Done - Expanded " + expandedReferenceCount + " references");
-                DisplayInfo("       Failed to expand " + unexpandableReferenceCount + " references");
+                if (unexpandableReferenceCount > 0) {
+                    DisplayInfo("       Failed to expand " + unexpandableReferenceCount + " references");
+                }
 
             } catch (Exception ex) {
 
@@ -232,8 +234,9 @@
             AddingMsgctxt  // have found a msgctxt, but it might be split over multiple lines
         }
 
+
         /// <summary>
-        /// Parses the PO format into a dictionary of entries.
+        /// Parse the PO formatted file into a dictionary of entries.
         /// </summary>
         Dictionary<string/*MsgInfo.UniqueID*/, MsgInfo> BuildMsgInfoDictionary(IEnumerable<LineInfo> lines)
         {
@@ -324,7 +327,7 @@
                             // We've found the end of the entry
                             state = LineInfoState.FinishedEntry;
                             if (newEntry.IsValid()) {
-                                result.Add(newEntry.UniqueID, newEntry);
+                                result.Add(newEntry.UniqueID(_options.CaseSensitiveIDs), newEntry);
                             } else {
                                 ErrorEncountered(line.LineNumber, "[End found of] invalid entry");
                             }
@@ -345,7 +348,8 @@
 
 
         /// <summary>
-        /// Extracts the string specified in the line, but does not unencode any escaped characters
+        /// Extracts the string inside the left-most " and the right-most "
+        /// i.e. extracts the string specified in the line, but does not unencode any escaped characters
         /// </summary>
         string ExtractString(string encodedLine, int lineNumber)
         {
@@ -370,7 +374,7 @@
         /// </summary>
         /// <param name="totalExpansions">Gives the total successful expansions performed</param>
         /// <returns>Returns how many references were recognised, but left unexpanded</returns>
-        int ExpandMsgstrs(IDictionary<string/*msgid*/, MsgInfo>  msgInfoDictionary, out int totalExpansions)
+        int ExpandMsgstrs(IDictionary<string/*MsgInfo.UniqueID*/, MsgInfo>  msgInfoDictionary, out int totalExpansions)
         {
             // mark all MsgInfos that don't need to be expanded
             foreach (MsgInfo msgInfo in msgInfoDictionary.Values) {
@@ -394,7 +398,7 @@
                             nextRefSearchPos = reference.StartIndex + reference.Length;
 
                             MsgInfo referredMsgInfo;
-                            if (msgInfoDictionary.TryGetValue(reference.Msgid, out referredMsgInfo)) {
+                            if (msgInfoDictionary.TryGetValue(reference.UniqueID(_options.CaseSensitiveIDs), out referredMsgInfo)) {
                                 // We have a msgstr with a msgid that matches the reference
                                 if (referredMsgInfo.msgstr_containsUnexpandedReferences) {
                                     // Not going to expand it unless/until the referred msgstr has been expanded. This prevents
@@ -438,7 +442,7 @@
 
                 nextRefSearchPos = reference.StartIndex + reference.Length;
 
-                if (reference != null && msgidDictionary.ContainsKey(reference.Msgid)) {
+                if (reference != null && msgidDictionary.ContainsKey(reference.UniqueID(_options.CaseSensitiveIDs))) {
                     result = true;
                     break;
                 }
@@ -474,7 +478,7 @@
 
 
         /// <summary>
-        /// Returns information about the first reference found, starting for the 0-based
+        /// Returns information about the first reference found, starting from the 0-based
         /// startIndex position in the line.
         /// </summary>
         ReferenceInfo GetFirstReference(string line, int startIndex)
@@ -512,7 +516,7 @@
         /// <seealso cref="DisplayInfo"/>
         void ErrorEncountered(int lineNumber, string message)
         {
-            if (!_options.Silent) {
+            if (!_options.Quiet) {
                 if (lineNumber < 1) {
                     Console.WriteLine("Error: " + message);
                 } else {
@@ -536,7 +540,7 @@
         /// </summary>
         void DisplayInfo(string message)
         {
-            if (!_options.Silent) Console.WriteLine(message);
+            if (!_options.Quiet) Console.WriteLine(message);
         }
 
 

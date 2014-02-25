@@ -2,6 +2,10 @@
 {
     using System;
 
+    /// <summary>
+    /// Encapsulates a language entry from the .PO file,
+    /// (the msgid and corresponding msgstr etc.)
+    /// </summary>
     public class MsgInfo
     {
         public string msgid;
@@ -22,16 +26,14 @@
         /// The PO format allows entries to have the same msgid if their context is different,
         /// so use UniqueID instead of msgid if you need a key.
         /// </summary>
-        /// <returns></returns>
-        public string UniqueID {
-            get
-            {
-                if (msgctxt == null) {
-                    return msgid;
-                } else {
-                    return msgid + "-" + msgctxt;
-                }
-            }
+        public string UniqueID(bool caseSensitiveIDs)
+        {
+            string result = msgid;
+            if (msgctxt != null) result += '-' + msgctxt;
+
+            if (caseSensitiveIDs == false) result = result.ToLower();
+
+            return result;
         }
     }
 }

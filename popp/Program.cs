@@ -11,9 +11,13 @@ namespace popp
     using System.IO;
     using System.Resources;
 
+    /// <summary>
+    /// Handles the user interface. i.e. deals with the commandline args
+    /// then invokes the Preprocessor
+    /// </summary>
     public class Program
     {
-        internal const string cProgramVersion = "v0.11";
+        internal const string cProgramVersion = "v0.12";
         internal const string cProgramNameShort = "popp";
         internal const string cProgramNameFull = "PO preprocessor";
 
@@ -34,6 +38,9 @@ namespace popp
                         ShowUsage();
                         return (int)ErrorLevel.Success;
 
+                    case "--version":
+                        ShowVersion();
+                        return (int)ErrorLevel.Success;
 
                     case "--nlf":
                     case "-nlf":
@@ -59,13 +66,28 @@ namespace popp
                         options.NewlinePreference = NewLineOptions.SameAsSource;
                         break;
 
+                    case "--quiet":
+                    case "-quiet":
+                    case "/quiet":
+                    case "-q":
+                    case "/q":
                     case "--silent":
                     case "-silent":
                     case "/silent":
+                        options.Quiet = true;
+                        break;
+
+                    case "--sensitive":
+                    case "-sensitive":
+                    case "/sensitive":
                     case "-s":
                     case "/s":
-                        options.Silent = true;
+                    case "--casesensitive":
+                    case "-casesensitive":
+                    case "/casesensitive":
+                        options.CaseSensitiveIDs = true;
                         break;
+
 
                     case "--count":
                     case "-count":
@@ -172,6 +194,10 @@ namespace popp
             return (RunningOnUnix && arg.Length > 2 && arg.IndexOf('/', 2) != -1);
         }
 
+        static void ShowVersion()
+        {
+            Console.WriteLine(cProgramNameFull + " " + cProgramVersion);
+        }
 
         static void ShowUsage()
         {
@@ -218,8 +244,12 @@ Options:
     [Default] Determines LF or CRLF for newlines by what the source file
     uses.
 
--s, --silent
-    Suppresses console error messages and info messages.
+-q, --quiet
+    Suppresses console error messages and info messages
+
+-s, --sensitive, --casesensitive
+    The msgids inside curly-brace-references are matched case-insensitively 
+    by default, the --sensitive option expands case-sensitive matches only.
 
 -c, --count    
     Returns the number of references contained in the source file, regardless

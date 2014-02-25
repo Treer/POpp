@@ -18,9 +18,22 @@
         public int Length;
 
         /// <summary>
-        /// msgid of the string that should replace the reference
+        /// WARNING - do not use this for comparisons, use UniqueID instead.
+        /// msgid of the string that should replace the reference, optionally with a hyphen followed by
+        /// the msgctxt
         /// </summary>
         public string Msgid;
+
+        /// <summary>
+        /// The PO format allows entries to have the same msgid if their context is different,
+        /// so use UniqueID instead of msgid if you need a key.
+        /// </summary>
+        /// <returns></returns>
+        public string UniqueID(bool CaseSensitiveIDs)
+        {
+            return CaseSensitiveIDs ? Msgid : Msgid.ToLower();
+        }
+
 
         public ReferenceInfo(int aStartIndex, int aLength, string aMsgid)
         {

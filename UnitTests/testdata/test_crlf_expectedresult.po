@@ -14,32 +14,32 @@ msgstr "popp"
 msgid "testing escapes"
 msgstr "this should not be \{id:ProductName short} compressed"
 
-#. Tests a simple expansion, refering to a msgstr which is already
+#. Tests a simple expansion, referring to a msgstr which is already
 #. constant
 #.
 #: \blah\blah.resx
 msgid "test level1 expansion"
 msgstr "this should be expanded by popp"
 
-msgid "multiline test"
+msgid "multi-line test"
 msgstr "Blah blah blah PO Preprocessor blag wubble wubble PO Preprocessor\r\nblah this should be expanded by popp wubble wubble "
 
-#. These recursion test msgstrs reference each other in a loop, so none of them should be expanded
+#. These recursion-test msgstrs reference each other in a loop, so none of them should be expanded
 msgid ""
 "recursion "
 "test 1"
 msgstr "recursion test >>> {id:recursion test 2} <<<"
 
-#. These recursion test msgstrs reference each other in a loop, so none of them should be expanded
+#. These recursion-test msgstrs reference each other in a loop, so none of them should be expanded
 msgid "recursion test 2"
 msgstr "recursion test >>> {id:recursion test 3} <<<"
 
-#. These recursion test msgstrs reference each other in a loop, so none of them should be expanded
+#. These recursion-test msgstrs reference each other in a loop, so none of them should be expanded
 msgid "recursion test 3"
 msgstr "recursion test >>> {id:recursion test 1} <<<"
 
-#. The nonexistant reference should be skipped by the working ref expanded
-msgid "nonexistant reference followed by working ref"
+#. The non-existent reference should be skipped by the working ref expanded
+msgid "non-existent reference followed by working ref"
 msgstr "three {id:this ref doesn't exist} four five six {id:this ref doesn't exist either} seven"
 
 msgid "5"
@@ -50,7 +50,7 @@ msgctxt "1"
 msgid "context test"
 msgstr "1"
 
-#. context test, with multiline msgctxt
+#. context test, with multi-line msgctxt
 msgctxt ""
 "2"
 msgid "context test"
@@ -65,4 +65,17 @@ msgstr "3"
 msgctxt "tadaaa!"
 msgid "context test"
 msgstr "1 2 3"
+
+#. Case-insensitivity test
+#, fuzzy
+msgid "Case-insensitivity test"
+msgstr "1 2 3"
+
+#. test some unicode chars
+msgid "contains unicode"
+msgstr "Schließen это тест Einführung"
+
+#. test some mode unicode chars
+msgid "России идентификатор"
+msgstr "это тест"
 
