@@ -2,10 +2,28 @@
 For Gnu .po language translation files. See the [GNU gettext documentation](https://www.gnu.org/software/gettext/manual/html_node/index.html) for information about PO files.
 
 
-This preprocessor allows msgstrs to contain expandable references
-to other msgstrs, and should work well with .PO file editors. In 
-future it may support conditional directives such as $define, $if, 
-and $include etc.
+This preprocessor allows your translated text to contain references
+to other items of translated text, in a way that should work within any .PO editor. 
+
+For example, you can have .PO source files like this:
+
+    msgid "ProductName short"
+    msgstr "POpp"
+    
+    msgid "Welcome text"
+    msgstr "Congratulations on your download of {id:productname short}"
+    
+which can be converted automatically to this:
+
+    msgid "ProductName short"
+    msgstr "POpp"
+    
+    msgid "Welcome text"
+    msgstr "Congratulations on your download of POpp"
+
+
+
+In future, popp may also support $include and conditional directives such as $define, $if, $else etc.
 
 #### Currently:
   * It does *not* support conditional directives.
@@ -38,7 +56,9 @@ which has the msgid of `ProductName_short`.
 however lines begining with "msgstr[_n_]" will not have their content expanded,
 and plural forms cannot be referenced with the brace notation.
 
-Output files are written in UTF-8
+Output files are written in UTF-8. If your source languages use unicode
+characters that your shell can't display, then avoid using pipes and stick with 
+specifying an input file and an output file. (Or proceed very carefully)
 
 
 #### Options:
