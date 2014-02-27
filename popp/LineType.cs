@@ -7,6 +7,7 @@
         Msgctxt,
         Msgid,
         Msgstr,
-        StrContinuation
+        StrContinuation,
+        IncludeStatement
     }
 }

@@ -1,0 +1,12 @@
+# comment
+msgid "greeting"
+msgstr "Hi!"
+
+$include "includeTest_2.po"
+
+# comment
+msgid "OK_button"
+msgstr "OK"
+
+; insert an error in includeTest_1.po
+$include "includeTest_leaf.po"

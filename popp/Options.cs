@@ -1,5 +1,7 @@
 ﻿namespace popp
 {
+    using System.Collections.Generic;
+
     public enum NewLineOptions
     {
         SameAsSource, // Use the same newline characters the source file uses
@@ -8,11 +10,17 @@
     }
 
 
-    public struct Options
+    public class Options
     {
         public NewLineOptions NewlinePreference;
         public bool Quiet;
         public bool CountReferences;
         public bool CaseSensitiveIDs;
+        public IList<string> IncludeDirectories;
+
+        public Options()
+        {
+            IncludeDirectories = new List<string>();
+        }
     }
 }

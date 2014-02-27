@@ -1,0 +1,8 @@
+# comment
+msgid "leaf greeting"
+msgstr "Hi! leaf"
+
+; insert an error in includeTest_leaf.po
+
+msgid "test references work accross includes"
+msgstr "message from includeTest_2: {id:incl2 greeting}"

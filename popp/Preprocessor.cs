@@ -10,23 +10,31 @@
     class Preprocessor
     {
         internal const string cReferenceSignature_Start = "{id:";
-        internal const string cReferenceSignature_End = "}";
+        internal const string cReferenceSignature_End   = "}";
+        internal const int    cMaxIncludeDepth          = 30; // This limit shouldn't be hit/needed, as we already detect loops
 
         readonly Options _options;
-        int errorLevel = 0;
+        int _errorLevel = 0;
+
+        /// <summary>
+        /// Provides a list of included files for LineInfo.IncludeFileID to
+        /// reference, so that error messages can provide the file the error occured in.
+        /// </summary>
+        List<string> _includeFileNames = new List<string>();
 
         /// <summary>
         /// Gets the number of references contained in the input file, regardless
         /// of whether the references can be successfully expanded.
         /// </summary>
         /// <returns>the number of references, or -1 if error</returns>
-        public int CountReferences(TextReader inputReader)
+        /// <param name="inputDirectory">The directory that contained the source file that was supplied to popp, or null (e.g. if stdin was the source)</param>
+        public int CountReferences(TextReader inputReader, string inputDirectory)
         {
             int result = 0;
 
             try {
                 // Build a list of information about each line
-                IEnumerable<LineInfo> lines = BuildListOfLines(inputReader);
+                IEnumerable<LineInfo> lines = BuildListOfLines(inputReader, inputDirectory, true);
 
                 // Build a dictionary of translation items
                 Dictionary<string/*MsgInfo.UniqueID*/, MsgInfo> keyValues = BuildMsgInfoDictionary(lines);
@@ -46,6 +54,11 @@
                 DisplayInfo(result + " references were found.");
                 DisplayInfo("");
 
+            } catch (LineException ex) {
+
+                ErrorEncountered(ex.LineInfo, ex.Message);
+                _errorLevel = (int)ErrorLevel.FatalError_Internal;
+
             } catch (Exception ex) {
 
                 ErrorEncountered("Unexpected internal error - " + ex);
@@ -59,15 +72,17 @@
         /// <summary>
         /// Run the preprocessor
         /// </summary>
-        /// <returns>errorLevel, 0 for success</returns>
-        public int Process(TextReader inputReader, TextWriter outputWriter) 
+        /// <param name="inputDirectory">Note - can be null</param>
+        /// <returns>errorLevel, or 0 for success</returns>
+        /// <param name="inputDirectory">The directory that contained the source file that was supplied to popp, or null (e.g. if stdin was the source)</param>
+        public int Process(TextReader inputReader, string inputDirectory, TextWriter outputWriter) 
         {
             int unexpandableReferenceCount = 0;
-            errorLevel = 0;
+            _errorLevel = 0;
 
             try {
                 // Build a list of information about each line
-                IEnumerable<LineInfo> lines = BuildListOfLines(inputReader);
+                IEnumerable<LineInfo> lines = BuildListOfLines(inputReader, inputDirectory, true);
 
                 // Todo:
                 // This is where we'll apply the $if $else $include etc directives
@@ -122,21 +137,91 @@
                     DisplayInfo("       Failed to expand " + unexpandableReferenceCount + " references");
                 }
 
+            } catch (LineException ex) {
+
+                ErrorEncountered(ex.LineInfo, ex.Message);
+                _errorLevel = (int)ErrorLevel.FatalError_Internal;
+
             } catch (Exception ex) {
 
                 ErrorEncountered("Unexpected internal error - " + ex);
-                errorLevel = (int)ErrorLevel.FatalError_Internal;
+                _errorLevel = (int)ErrorLevel.FatalError_Internal;
             }
 
             // If the preprocessing was successful, then return the number of references
             // we found which could not be expanded, as a negative number (to prevent 
             // confusion with the error codes)
-            if (errorLevel == 0) errorLevel = -unexpandableReferenceCount;
+            if (_errorLevel == 0) _errorLevel = -unexpandableReferenceCount;
 
-            return errorLevel;
+            return _errorLevel;
         }
 
-        LineType DetermineLineType(string line, int lineNumber)
+        /// <summary>
+        /// Returns a TextReader for the file pointed to by the $include line.
+        /// Remember to Dispose() of it.
+        /// May return null. 
+        /// </summary>
+        /// <param name="inputDirectory">The directory that contained the source file that was supplied to popp, or null (e.g. if stdin was the source)</param>
+        /// <param name="currentIncludeDirectory">null unless 'line' is from an $included file, in which case it 
+        /// should contain the directory containing the $included file so we can add that to our search path</param>
+        /// <param name="includedFileNameAndPath">set to null unless the function returns a TextReader, in 
+        /// which case it's </param>
+        TextReader IncludedTextReader(LineInfo line, string inputDirectory, string currentIncludeDirectory, out string includedFileNameAndPath)
+        {
+            TextReader result = null;
+            FileStream sourceStream = null;
+
+            includedFileNameAndPath = null;
+
+            try {
+                string pathAndFileName = null;
+                string fileName = ExtractString(line);
+
+                // Add inputDirectory and "no directory" to the front of the list of include-directories to search
+                List<string> directoryList = new List<string>();
+                directoryList.Add(inputDirectory);
+                if (currentIncludeDirectory != null) directoryList.Add(currentIncludeDirectory);
+                directoryList.Add("");
+                directoryList.AddRange(_options.IncludeDirectories);
+
+                foreach (string directory in directoryList) {
+
+                    string tempPath = Path.Combine(directory, fileName);
+                    if (File.Exists(tempPath)) {
+                        pathAndFileName = tempPath;
+                        break;
+                    }
+                }
+
+                if (pathAndFileName == null) {
+
+                    throw new LineException(
+                        line,
+                        "$included source-file not found" +
+                        (String.IsNullOrEmpty(fileName) ? "" : ": " + fileName)
+                    );
+
+                } else {
+
+                    sourceStream = new FileStream(pathAndFileName, FileMode.Open, FileAccess.Read);
+                    result = new StreamReader(sourceStream);
+                    includedFileNameAndPath = Path.GetFullPath(pathAndFileName);
+                }
+
+            } catch (LineException) {
+                throw;
+
+            } catch (Exception ex) {
+
+                if (sourceStream != null) sourceStream.Close();
+                throw new LineException(line, "Unexpected error while expanding $include: " + ex);
+            }
+
+            return result;
+        }
+
+
+        LineType DetermineLineType(string line, int lineNumber, int includeFileID)
         {
             LineType result;
 
@@ -145,6 +230,13 @@
 
             } else if (line[0] == '#') {
                 result = LineType.Comment;
+
+                if (line.Length > 11 && line[2] == '$' && (line[1] == ' ' || line[1] == '.')) {
+                    // this could be an $include statement, as we allow includes of the alternate forms:
+                    // # $include
+                    // #.$include
+                    if (line.Substring(3, 8).ToLower() == "include ") result = LineType.IncludeStatement;
+                }
 
             } else if (line[0] == '"') {
                 result = LineType.StrContinuation;
@@ -158,24 +250,86 @@
             } else if (line.StartsWith("msgctxt", true, CultureInfo.InvariantCulture)) {
                 result = LineType.Msgctxt;
 
+            } else if (line.StartsWith("$include ", true, CultureInfo.InvariantCulture)) {
+                result = LineType.IncludeStatement;
+
             } else {
                 // Can't parse it, say that it's a comment so that it will be preserved
                 result = LineType.Comment;
-                ErrorEncountered(lineNumber, "Could not determine the line type");
+                ErrorEncountered(lineNumber, includeFileID, "Could not determine the line type");
             }
             return result;
         }
 
+        IEnumerable<LineInfo> BuildListOfLines(TextReader inputReader, string inputDirectory, bool expandIncludes)
+        {
+            List<int> includeFileIDStack = new List<int>();
 
-        IEnumerable<LineInfo> BuildListOfLines(TextReader inputReader)
+            return BuildListOfLines(inputReader, inputDirectory, expandIncludes, includeFileIDStack);
+        }
+
+        /// <param name="expandIncludes">if true the referenced file will be inserted, if false, the include will be removed</param>
+        /// <param name="depth">how many includes deep are we</param>
+        /// <param name="includeFileStack">tracks the include files we are inside of, to prevent loops, and to know how deep we are</param>
+        /// <param name="inputDirectory">The directory that contained the source file that was supplied to popp, or null (e.g. if stdin was the source)</param>
+        IEnumerable<LineInfo> BuildListOfLines(TextReader inputReader, string inputDirectory, bool expandIncludes, List<int> includeFileIDStack)
         {
             int line_num = 0;
+            int includeFileID = -1;
+            string includeDirectory = null;
+                                   
+            if (includeFileIDStack.Count > 0) {
+                // We're inside an include file, find our current directory
+                includeFileID = includeFileIDStack.First();
+                includeDirectory = Path.GetDirectoryName(_includeFileNames[includeFileID]);
+            }
+
             string line;
             List<LineInfo> result = new List<LineInfo>();
             while ((line = inputReader.ReadLine()) != null) {
+
                 line_num++;
-                LineType lineType = DetermineLineType(line, line_num);
-                result.Add(new LineInfo(lineType, line_num, line));
+                LineType lineType = DetermineLineType(line, line_num, includeFileID);
+                LineInfo lineInfo = new LineInfo(lineType, line_num, includeFileID, line);
+
+                if (lineType != LineType.IncludeStatement) {
+
+                    result.Add(lineInfo);
+
+                } else {
+                    // this line is an $include statement
+                    if (expandIncludes && includeFileIDStack.Count < cMaxIncludeDepth) {
+                        // Expand the included file
+
+                        string includeStatement_File;
+                        TextReader includeStatement_FileReader = IncludedTextReader(lineInfo, inputDirectory, includeDirectory, out includeStatement_File);
+                        
+                        if (includeStatement_FileReader != null) using(includeStatement_FileReader) {
+
+                            int includeStatement_FileID = _includeFileNames.IndexOfFileInList(includeStatement_File);
+                            
+                            if (includeFileIDStack.Contains(includeStatement_FileID)) {
+                                throw new LineException(lineInfo, "Recursive $include statement found. Aborting.");
+                            }
+
+                            if (includeStatement_FileID < 0) {
+                                // The $include statement is pointing to a new include file, add it to the global list of _includeFileNames
+                                _includeFileNames.Add(includeStatement_File);
+                                includeStatement_FileID = _includeFileNames.Count - 1;
+                            }
+
+                            // push includeStatement_FileID onto includeFileIDStack
+                            includeFileIDStack.Insert(0, includeStatement_FileID); 
+                            try {
+                                IEnumerable<LineInfo> includedLines = BuildListOfLines(includeStatement_FileReader, inputDirectory, true, includeFileIDStack);
+                                result.AddRange(includedLines);
+                            } finally {
+                                // pop includeStatement_FileID off includeFileIDStack
+                                includeFileIDStack.RemoveAt(0);
+                            }
+                        }
+                    }
+                }
             }
 
             return result;
@@ -225,50 +379,50 @@
 
                         if (line.Type == LineType.Msgid) {
                             state = LineInfoState.AddingMsgid;
-                            newEntry.msgid = ExtractString(line.Line, line.LineNumber);
+                            newEntry.msgid = ExtractString(line);
 
                         } else if (line.Type == LineType.Msgctxt) {
                             // msgctxt is optional, but if present it appears before the msgid
                             state = LineInfoState.AddingMsgctxt;
-                            newEntry.msgctxt = ExtractString(line.Line, line.LineNumber); 
+                            newEntry.msgctxt = ExtractString(line); 
 
                         } else if (line.Type == LineType.Msgstr || line.Type == LineType.StrContinuation) {
                             // An entry can't start with a msgstr or string-continuation
-                            ErrorEncountered(line.LineNumber, "Unexpected string or msgstr");
+                            ErrorEncountered(line, "Unexpected string or msgstr");
                         }
                         break;
 
                     case LineInfoState.AddingMsgctxt:                        
 
                         if (line.Type == LineType.StrContinuation) {
-                            newEntry.msgctxt += ExtractString(line.Line, line.LineNumber);
+                            newEntry.msgctxt += ExtractString(line);
 
                         } else if (line.Type == LineType.Msgid) {
                             state = LineInfoState.AddingMsgid;
-                            newEntry.msgid = ExtractString(line.Line, line.LineNumber);
+                            newEntry.msgid = ExtractString(line);
                         
                         } else {
                             // msgctxt is optional, but if present it appears before the msgid
-                            ErrorEncountered(line.LineNumber, "msgid not found after msgctxt");
+                            ErrorEncountered(line, "msgid not found after msgctxt");
                         }
                         break;
 
                     case LineInfoState.AddingMsgid:
 
                         if (line.Type == LineType.StrContinuation) {
-                            newEntry.msgid += ExtractString(line.Line, line.LineNumber);
+                            newEntry.msgid += ExtractString(line);
 
                         } else if (line.Type == LineType.Msgstr) {
                             state = LineInfoState.AddingMsgstr;
-                            newEntry.msgstr = ExtractString(line.Line, line.LineNumber);
+                            newEntry.msgstr = ExtractString(line);
                             newEntry.msgstr_linenumber = line.LineNumber;
                         
                         } else if (line.Type == LineType.Msgid) {
                             // We can't have two msgids in a row!
                             if (line.Line.StartsWith("msgid_plural", true, CultureInfo.InvariantCulture)) {
-                                ErrorEncountered(line.LineNumber, "Multiple msgids encountered, PO plural-forms are not currently supported :(");
+                                ErrorEncountered(line, "Multiple msgids encountered, PO plural-forms are not currently supported :(");
                             } else {
-                                ErrorEncountered(line.LineNumber, "Unexpected msgid");
+                                ErrorEncountered(line, "Unexpected msgid");
                             }
                         }
                         break;
@@ -276,24 +430,30 @@
                     case LineInfoState.AddingMsgstr:
 
                         if (line.Type == LineType.StrContinuation) {
-                            newEntry.msgstr += ExtractString(line.Line, line.LineNumber);
+                            newEntry.msgstr += ExtractString(line);
                             newEntry.msgstr_lineCount++;
 
                         } else if (line.Type == LineType.Whitespace) {
                             // We've found the end of the entry
                             state = LineInfoState.FinishedEntry;
                             if (newEntry.IsValid()) {
-                                result.Add(newEntry.UniqueID(_options.CaseSensitiveIDs), newEntry);
+                                string uniqueID = newEntry.UniqueID(_options.CaseSensitiveIDs);
+                                if (result.ContainsKey(uniqueID)) {
+                                    // Duplicate msgids encountered - Abort if the msgstr contains a reference, as duplicate msgids are now supported yet and will result in the reference not expanding
+                                    TestDuplicateEntry(line, newEntry);
+                                } else {
+                                    result.Add(newEntry.UniqueID(_options.CaseSensitiveIDs), newEntry);
+                                }
                             } else {
-                                ErrorEncountered(line.LineNumber, "[End found of] invalid entry");
+                                ErrorEncountered(line, "[End found of] invalid entry");
                             }
                             newEntry = new MsgInfo();
 
                         } else if (line.Type == LineType.Msgstr) {
-                            ErrorEncountered(line.LineNumber, "Multiple msgstrs encountered, PO plural-forms are not currently supported :( - skipping line ");
+                            ErrorEncountered(line, "Multiple msgstrs encountered, PO plural-forms are not currently supported :( - skipping line ");
 
                         } else {
-                            ErrorEncountered(line.LineNumber, "Unexpected line encountered at end of entry");
+                            ErrorEncountered(line, "Unexpected line encountered at end of entry \"" + newEntry.msgid + "\" (was expecting whitespace)");
                         }
                         break;
                 }
@@ -302,24 +462,40 @@
             return result;
         }
 
+        /// <summary>
+        /// Duplicate msgids encountered - Abort if the msgstr contains a reference, as
+        /// duplicate msgids are now supported yet and will result in the msgstr not being expanded.
+        /// </summary>
+        void TestDuplicateEntry(LineInfo line, MsgInfo duplicateEntry) {
+
+            if (GetFirstReference(duplicateEntry.msgstr, 0) != null) {
+                throw new LineException(line, "Duplicate msgid \"" + duplicateEntry.msgid + "\" encountered - Aborting because this is not supported yet and the msgstr contains a reference which popp will fail to expand.");
+            } else {
+                ErrorEncountered(line, "Duplicate msgid \"" + duplicateEntry.msgid + "\" encountered (non-fatal).");
+            }
+        }
+
 
         /// <summary>
         /// Extracts the string inside the left-most " and the right-most "
         /// i.e. extracts the string specified in the line, but does not unencode any escaped characters
         /// </summary>
-        string ExtractString(string encodedLine, int lineNumber)
+        string ExtractString(LineInfo lineInfo)
         {
             string result = String.Empty;
 
             // find the characters between the left-most " and the right-most "
-            int quotePosLeft = encodedLine.IndexOf('"');
-            int quotePosRight = encodedLine.LastIndexOf('"');
+            int quotePosLeft = lineInfo.Line.IndexOf('"');
+            int quotePosRight = lineInfo.Line.LastIndexOf('"');
             
             if (quotePosLeft < 0 || quotePosRight <= quotePosLeft) {
-                ErrorEncountered(lineNumber, "Missing quotemarks - very bad - line will be missing from output");
+                // A note about the wording of this error message: It can occur when quotes are missing
+                // from a .PO entry such as a msgid or msgstr, but it can also happen if quotes are missing
+                // from an $include statement intended for popp.
+                ErrorEncountered(lineInfo, "Missing quotemarks - very bad - line will be missing from output");
 
             } else {
-                result = encodedLine.Substring(quotePosLeft + 1, quotePosRight - quotePosLeft - 1);
+                result = lineInfo.Line.Substring(quotePosLeft + 1, quotePosRight - quotePosLeft - 1);
             }
 
             return result;
@@ -435,7 +611,7 @@
 
         /// <summary>
         /// Returns information about the first reference found, starting from the 0-based
-        /// startIndex position in the line.
+        /// startIndex position in the line. Null is returned if the line has no reference.
         /// </summary>
         ReferenceInfo GetFirstReference(string line, int startIndex)
         {
@@ -463,7 +639,7 @@
             return result;
         }
 
-
+        /*
         /// <summary>
         /// Sends an error message to the console, if errors are not suppressed
         /// and sets the return value to indicate a non-fatal error.
@@ -480,8 +656,46 @@
                     Console.WriteLine("Error on line " + lineNumber + ": " + message);
                 }
             }
-            if (errorLevel == 0) errorLevel = (int)ErrorLevel.NonFatalError;
+            if (_errorLevel == 0) _errorLevel = (int)ErrorLevel.NonFatalError;
+        }*/
+
+        void ErrorEncountered(int lineNumber, int includeFileID, string message)
+        {
+            ErrorEncountered(
+                new LineInfo(LineType.Whitespace, lineNumber, includeFileID, null), // construct a dummy LineInfo to save having to duplicate the ErrorEncountered code
+                message
+            );
         }
+
+
+        /// <summary>
+        /// Sends an error message to the console, if errors are not suppressed
+        /// and sets the return value to indicate a non-fatal error.
+        /// </summary>
+        /// <param name="lineNumber">0 if line number is not known, otherwise provide the line of the source file the error was encountered at</param>
+        /// <seealso cref="DisplayInfo"/>
+        void ErrorEncountered(LineInfo lineInfo, string message)
+        {
+            if (!_options.Quiet) {
+                if (lineInfo == null) {   
+                    // todo: write this to stderr   
+                    Console.WriteLine("Error: " + message);
+                } else if (lineInfo.IncludeFileID >= 0) {
+                    Console.WriteLine(
+                        String.Format(
+                            "Error on line {0} of \"{1}\": {2}",
+                            lineInfo.LineNumber,
+                            Path.GetFileName(_includeFileNames[lineInfo.IncludeFileID]),
+                            message
+                        )
+                    );
+                } else {
+                    Console.WriteLine("Error on line " + lineInfo.LineNumber + ": " + message);
+                }
+            }
+            if (_errorLevel == 0) _errorLevel = (int)ErrorLevel.NonFatalError;
+        }
+
 
         /// <summary>
         /// Use this form of ErrorEncountered only if the line number is not known.
@@ -489,7 +703,7 @@
         /// <seealso cref="DisplayInfo"/>
         void ErrorEncountered(string message)
         {
-            ErrorEncountered(0, message);
+            ErrorEncountered(null, message);
         }
 
         /// <summary>

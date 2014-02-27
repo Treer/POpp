@@ -102,6 +102,24 @@ namespace popp
                         options.CountReferences = true;
                         break;
 
+                    case "--includedirectory":
+                    case "-includedirectory":
+                    case "/includedirectory":
+                    case "-i":
+                    case "/i":
+                        if ((i + 1) < args.Length) {
+                            if (AddIncludeDirectory(args[i + 1], options)) {
+                                i++;
+                            } else {
+                                return (int)ErrorLevel.FatalError_InvalidArgs;
+                            }
+                        } else {
+                            ShowUsage();
+                            return (int)ErrorLevel.FatalError_InvalidArgs;
+                        }
+                        break;
+
+
                     default:
                         if (!IsFileArgument(args[i]))
                         {
@@ -189,6 +207,37 @@ namespace popp
         }
 
 
+        /// <summary>
+        /// Adds the directory to the IncludeDirectories list in options.
+        /// Writes error to the console and returns false if the directory doesn't exist.
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        static bool AddIncludeDirectory(string directory, Options options) {
+
+            bool result = false;
+
+            string includeDir = null;
+            try {
+                if (Directory.Exists(directory)) {
+                    includeDir = Path.GetFullPath(directory);
+                }
+            } catch (Exception ex) {
+                Console.WriteLine("Argument error, could not find directory \"" + directory + "\": " + ex);
+            }
+
+            if (String.IsNullOrEmpty(includeDir)) {
+                Console.WriteLine("Argument error, could not find directory \"" + directory + "\"");
+            } else {
+                options.IncludeDirectories.Add(includeDir);
+                result = true;
+            }
+
+            return result;
+        }
+
+
         static int PreprocessFile(string sname, string dname, Options options)
         {
             TextReader inputReader;
@@ -196,6 +245,7 @@ namespace popp
 
             FileStream sourceStream = null;
             FileStream destStream = null;
+            string sourceDirectory = null;
             try {
 
                 if (sname == String.Empty) {
@@ -203,6 +253,13 @@ namespace popp
                 } else {
                     sourceStream = new FileStream(sname, FileMode.Open, FileAccess.Read);
                     inputReader = new StreamReader(sourceStream);
+
+                    try {
+                        sourceDirectory = Path.GetDirectoryName(Path.GetFullPath(sname));
+                    } catch (Exception ex) {
+                        // This shouldn't happen unless permissions are really screwy, or I've made a terrible mistake.
+                        Console.WriteLine("Non-fatal exception attempting to read source path: " + ex);
+                    }
                 }
 
                 if (options.CountReferences) {
@@ -266,9 +323,9 @@ namespace popp
 
             Preprocessor pp = new Preprocessor(options);
             if (options.CountReferences) {
-                return pp.CountReferences(inputReader);
+                return pp.CountReferences(inputReader, sourceDirectory);
             } else {
-                return pp.Process(inputReader, outputWriter);
+                return pp.Process(inputReader, sourceDirectory, outputWriter);
             }
         }
 
@@ -351,12 +408,15 @@ Options:
 
 -s, --sensitive, --casesensitive
     The msgids inside curly-brace-references are matched case-insensitively 
-    by default, the --sensitive option expands case-sensitive matches only.
+    by default, the --sensitive option will only expand case-sensitive 
+    matches.
 
 -c, --count    
     Returns the number of references contained in the source file, regardless
     of whether the references are valid and can be expanded. No output file 
-    is written.
+    is written. Can be used as a second pass to confirm all references have
+	been expanded (none were misspelled etc), but
+
     WARNING: Plural forms are not supported and references contained in 
     plural-form msgstrs are not counted.
 

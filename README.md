@@ -83,7 +83,9 @@ specifying an input file and an output file. (Or proceed very carefully)
  * -c, --count    
   - Returns the number of references contained in the source file, regardless
     of whether the references are valid and can be expanded. No output file 
-    is written. Can be used to check for misspelled msgids, but
+    is written. Can be used as a second pass to confirm all references have
+    been expanded (none were misspelled etc), but
+	
     WARNING: Plural forms are not supported and references contained in 
     plural-form msgstrs are not counted.
 	

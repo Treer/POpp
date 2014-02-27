@@ -80,7 +80,9 @@
             shellCommand.WaitForExit();
             Assert.IsTrue(FileCompare("../../testdata/test_crlf_result.po", "../../testdata/test_crlf_expectedresult.po"), "test_crlf_result.po does not match test_crlf_expectedresult.po");
 
-            /* This test fails on the unicode chars because the console is the wrong encoding - not sure what to do about it             
+            /* This test fails on the unicode chars because the console has limited 
+             * characters so the encoding conversion is lossy - not sure what to do 
+             * about it, warn people away from pipes I guess
             // newline-autodetection will not fail on a file
             strCmdText = "popp ../../testdata/test.po - > ../../testdata/test_result.po";
             shellCommand = Process.Start("CMD.exe", "/C " + strCmdText);
@@ -88,6 +90,16 @@
             Assert.IsTrue(FileCompare("../../testdata/test_result.po", "../../testdata/test_expectedresult.po"), "test_result.po does not match test_expectedresult.po");
             */
         }
+
+        [TestMethod]
+        public void Include()
+        {
+            // Test the basics
+            int result = Program.Main(new string[] { "../../testdata/includeTest_1.po", "../../testdata/includeTest_1_result.po" });
+            //Assert.AreEqual(-5, result, "There are 5 unexpandable references in the test file, but popp returned: " + result);
+            //Assert.IsTrue(FileCompare("../../testdata/test_result.po", "../../testdata/test_expectedresult.po"), "test_result.po does not match test_expectedresult.po");
+        }
+
 
 
         // This method accepts two strings the represent two files to 
