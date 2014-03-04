@@ -9,6 +9,7 @@ namespace popp
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
+    using System.Reflection;
     using System.Resources;
     using System.Text;
 
@@ -18,7 +19,6 @@ namespace popp
     /// </summary>
     public class Program
     {
-        internal const string cProgramVersion = "v0.12";
         internal const string cProgramNameShort = "popp";
         internal const string cProgramNameFull = "PO preprocessor";
 
@@ -353,15 +353,31 @@ namespace popp
             return (RunningOnUnix && arg.Length > 2 && arg.IndexOf('/', 2) != -1);
         }
 
-        static void ShowVersion()
-        {
-            Console.WriteLine(cProgramNameFull + " " + cProgramVersion);
+        static void ShowVersion() {
+            Console.WriteLine(cProgramNameFull + " " + ProgramVersion);
         }
+
+        internal static string ProgramVersion {
+
+            get {
+                Version assemblyVersion = Assembly.GetAssembly(typeof(Program)).GetName().Version;
+
+                string result = String.Format(
+                    "v{0}.{1}.{2}",
+                    assemblyVersion.Major,
+                    assemblyVersion.Minor,
+                    assemblyVersion.Build
+                );
+
+                return result;
+            }
+        }
+
 
         static void ShowUsage()
         {
 
-            string Usage = cProgramNameFull + " " + cProgramVersion +
+            string Usage = cProgramNameFull + " " + ProgramVersion +
                 @"
  (Available from github.com/Treer/POpp)
 

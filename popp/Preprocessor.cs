@@ -81,12 +81,12 @@
             _errorLevel = 0;
 
             try {
-                // Build a list of information about each line
+                // Build a list of information about each line, expanding any $include statements
                 IEnumerable<LineInfo> lines = BuildListOfLines(inputReader, inputDirectory, true);
 
                 // Todo:
-                // This is where we'll apply the $if $else $include etc directives
-                // lines = ApplyDirectives(lines);
+                // This is where we'll apply the $if $else etc conditional directives
+                // lines = ApplyConditionalDirectives(lines);
 
                 // Build a dictionary of translation items
                 Dictionary<string/*MsgInfo.UniqueID*/, MsgInfo> keyValues = BuildMsgInfoDictionary(lines);
@@ -562,9 +562,9 @@
         }
 
         /// <summary>
-        /// Returns true if the line contains a reference AND the reference exists in the msgidDictionary
+        /// Returns true if the line contains a reference AND the reference exists in the msgInfoDictionary
         /// </summary>
-        bool ContainsReference(string line, IDictionary<string/*msgid*/, MsgInfo>  msgidDictionary) 
+        bool ContainsReference(string line, IDictionary<string/*MsgInfo.UniqueID*/, MsgInfo> msgInfoDictionary) 
         {
             bool result = false;
 
@@ -574,7 +574,7 @@
 
                 nextRefSearchPos = reference.StartIndex + reference.Length;
 
-                if (reference != null && msgidDictionary.ContainsKey(reference.UniqueID(_options.CaseSensitiveIDs))) {
+                if (reference != null && msgInfoDictionary.ContainsKey(reference.UniqueID(_options.CaseSensitiveIDs))) {
                     result = true;
                     break;
                 }
@@ -584,14 +584,14 @@
         }
 
         /// <summary>
-        /// Returns the number of references contained msgidDictionary, regardless of whether or not
+        /// Returns the number of references contained in msgInfoList, regardless of whether or not
         /// they refer to msgids which exist.
         /// </summary>
-        int CountUnexpandedReferences(IEnumerable<MsgInfo> MsgInfoList)
+        int CountUnexpandedReferences(IEnumerable<MsgInfo> msgInfoList)
         {
             int result = 0;
 
-            foreach (MsgInfo msgInfo in MsgInfoList) {
+            foreach (MsgInfo msgInfo in msgInfoList) {
 
                 ReferenceInfo reference;
                 int nextRefSearchPos = 0;
@@ -600,8 +600,7 @@
                     nextRefSearchPos = reference.StartIndex + reference.Length;
 
                     // Use DisplayInfo to avoid setting the errorLevel, since the negative unexpandedReferenceCount
-                    // will be assigned to the errorLevel anyway if there are no other errors.
-                    //ErrorEncountered(msgInfo.msgstr_linenumber, "Could not resolve reference \"" + reference.Msgid + "\"");
+                    // will be assigned to the errorLevel if there are no other errors.
                     DisplayInfo("Warning on line " + msgInfo.msgstr_linenumber + ": Could not resolve reference \"" + reference.Msgid + "\"");
                 }
             }
@@ -639,25 +638,6 @@
             return result;
         }
 
-        /*
-        /// <summary>
-        /// Sends an error message to the console, if errors are not suppressed
-        /// and sets the return value to indicate a non-fatal error.
-        /// </summary>
-        /// <param name="lineNumber">0 if line number is not known, otherwise provide the line of the source file the error was encountered at</param>
-        /// <seealso cref="DisplayInfo"/>
-        void ErrorEncountered(int lineNumber, string message)
-        {
-            if (!_options.Quiet) {
-                if (lineNumber < 1) {   
-                    // todo: write this to stderr   
-                    Console.WriteLine("Error: " + message);
-                } else {
-                    Console.WriteLine("Error on line " + lineNumber + ": " + message);
-                }
-            }
-            if (_errorLevel == 0) _errorLevel = (int)ErrorLevel.NonFatalError;
-        }*/
 
         void ErrorEncountered(int lineNumber, int includeFileID, string message)
         {
