@@ -325,9 +325,38 @@ namespace popp
             if (options.CountReferences) {
                 return pp.CountReferences(inputReader, sourceDirectory);
             } else {
-                return pp.Process(inputReader, sourceDirectory, outputWriter);
+                int result = pp.Process(inputReader, sourceDirectory, outputWriter);
+
+                try {
+                    outputWriter.Close();
+                    CleanupBadOutput(result, dname);
+                } catch { }
+
+                return result;
             }
         }
+
+        /// <summary>
+        /// If the preprocessor aborts after it opens the output file but before it writes
+        /// anything to it, then clean up the output file.
+        /// </summary>
+        static void CleanupBadOutput(int preprocessorResult, string outputFilename) {
+
+            if (preprocessorResult == (int)ErrorLevel.FatalError_Internal) {
+                // A fatal error occurred during preprocessing
+
+                if (!String.IsNullOrEmpty(outputFilename) && File.Exists(outputFilename)) {
+                    // The fatal error may have happened before any output was written, but
+                    // due to the architecture of passing the preprocessor a working TextWriter,
+                    // an empty output file may have been created anyway. So if the output file 
+                    // is empty then clean it up (delete it).
+
+                    long length = new System.IO.FileInfo(outputFilename).Length;
+                    if (length == 0) File.Delete(outputFilename);
+                }
+            }
+        }
+
 
         private static bool RunningOnUnix
         {
@@ -436,9 +465,6 @@ Options:
     WARNING: Plural forms are not supported and references contained in 
     plural-form msgstrs are not counted.
 
--D<sym>
-    [Not implemented] Defines a symbol for evaluation of conditional 
-    expressions such as $IF and $ELSEIF
     ";
             Usage += @"
 

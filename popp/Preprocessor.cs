@@ -33,7 +33,7 @@
             int result = 0;
 
             try {
-                // Build a list of information about each line
+                // Build a list of information about each line, expanding any $include statements
                 IEnumerable<LineInfo> lines = BuildListOfLines(inputReader, inputDirectory, true);
 
                 // Build a dictionary of translation items
@@ -263,9 +263,10 @@
 
         IEnumerable<LineInfo> BuildListOfLines(TextReader inputReader, string inputDirectory, bool expandIncludes)
         {
-            List<int> includeFileIDStack = new List<int>();
+            List<int> includeFiles_IDStack = new List<int>();
 
-            return BuildListOfLines(inputReader, inputDirectory, expandIncludes, includeFileIDStack);
+            // call the recursive version of this function, with no include files that we are inside of (an empty stack)
+            return BuildListOfLines(inputReader, inputDirectory, expandIncludes, includeFiles_IDStack);
         }
 
         /// <param name="expandIncludes">if true the referenced file will be inserted, if false, the include will be removed</param>
@@ -336,14 +337,13 @@
         }
 
 
-        enum LineInfoState
-        {
+        enum LineInfoState {
+
             FinishedEntry, // looking for the next entry
             AddingMsgid,   // have found the msgid, but it might be split over multiple lines
             AddingMsgstr,  // have found the msgstr, but it might be split over multiple lines
             AddingMsgctxt  // have found a msgctxt, but it might be split over multiple lines
         }
-
 
         /// <summary>
         /// Parse the PO formatted file into a dictionary of entries.

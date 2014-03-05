@@ -18,18 +18,12 @@
 
         public LineInfo(LineType aType, int aLineNumber, int aIncludeFileID, string aLine)
         {
-            Type = aType;
-            LineNumber = aLineNumber;
-            Line = aLine;
+            Type          = aType;
+            LineNumber    = aLineNumber;
+            Line          = aLine;
             IncludeFileID = aIncludeFileID;
         }
 
-        public LineInfo(LineType aType, int aLineNumber, string aLine)
-        {
-            Type = aType;
-            LineNumber = aLineNumber;
-            Line = aLine;
-            IncludeFileID = -1;
-        }
+        public LineInfo(LineType aType, int aLineNumber, string aLine) : this(aType, aLineNumber, -1, aLine) { }
     }
 }

@@ -3,7 +3,7 @@
     /// <summary>
     /// errorLevel Return values for Main()
     /// </summary>
-    enum ErrorLevel : int
+    public enum ErrorLevel : int
     {
         Success                = 0,
         FatalError_InvalidArgs = 1,
