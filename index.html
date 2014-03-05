@@ -31,37 +31,145 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <h4>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h4>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>The preprocessor allows your translated text to reference
+to other items of translated text, in a way that should work within any .PO editor. See the <a href="https://www.gnu.org/software/gettext/manual/html_node/index.html">GNU gettext documentation</a> for information about PO files.</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>For example, you can have .PO source files like this:</p>
+
+<pre><code>msgid "ProductName short"
+msgstr "POpp"
+
+msgid "Welcome text"
+msgstr "Congratulations on your download of {id:productname short}"
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>and it can be converted automatically to this:</p>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<pre><code>msgid "ProductName short"
+msgstr "POpp"
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+msgid "Welcome text"
+msgstr "Congratulations on your download of POpp"
+</code></pre>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<p>popp also allows .PO files to contain $include statements. Conditional directives might be added in future.</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<h4>
+<a name="current-version" class="anchor" href="#current-version"><span class="octicon octicon-link"></span></a>Current version:</h4>
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<ul>
+<li>
+<strong>The Windows executable can be <a href="https://mega.co.nz/#!zYkiSDIA!zzQkqeOChgqUiUYsXKQDNaW1X0ZMdw2suyYrrbtUFt4">downloaded here</a></strong> (v0.12)
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<ul>
+<li>md5: f60c75ad0efeb28194430cd62ab0a9ce *popp.exe</li>
+</ul>
+</li>
+<li>I'm still in the process of trying popp in a real project environment, so for now assume it's only been tested with the automatic test cases, and take care.</li>
+</ul><h2>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation:</h2>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<p>Expands .po msgstrs which reference other msgstr values via a curly brace
+notation, for example <code>{id:ProductName_short}</code> will be expanded to the msgstr
+which has the msgid of <code>ProductName_short</code>.</p>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<h4>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage:</h4>
+
+<pre><code>popp [options] source.popp [dest.po]
+</code></pre>
+
+<h4>
+<a name="brace-notation" class="anchor" href="#brace-notation"><span class="octicon octicon-link"></span></a>Brace notation:</h4>
+
+<ul>
+<li>
+<code>{id:msgid}</code> or <code>{id:msgid-msgctxt}</code>
+</li>
+<li>references can be escaped with a backslash, e.g. <code>\{id:msgid}</code> is ignored.<br>
+</li>
+</ul><p><strong>WARNING</strong>: Plural forms are not supported, the file can still be processed,
+however lines begining with "msgstr[<em>n</em>]" will not have their content expanded,
+and plural forms cannot be referenced with the brace notation.</p>
+
+<h4>
+<a name="include-notation" class="anchor" href="#include-notation"><span class="octicon octicon-link"></span></a>$include notation</h4>
+
+<p>The following include statements are all valid notation</p>
+
+<pre><code>$include "file.po"
+
+# $include "file.po"
+#.$include "file.po"
+</code></pre>
+
+<p>Use the hash-comment notation if you want the file to editable in a .PO editor 
+or tool before it will be passed through popp.</p>
+
+<h4>
+<a name="output-and-pipes" class="anchor" href="#output-and-pipes"><span class="octicon octicon-link"></span></a>Output, and pipes</h4>
+
+<p>Output files are written in UTF-8. If your source languages use unicode
+characters that your shell can't display, then avoid using pipes and stick with 
+specifying an input file and an output file. Or proceed <em>very</em> carefully, as you 
+risk having the unicode characters mapped to what the shell can handle.</p>
+
+<h4>
+<a name="options" class="anchor" href="#options"><span class="octicon octicon-link"></span></a>Options:</h4>
+
+<ul>
+<li>
+<p>-nl, --nLF</p>
+
+<p>Use LF for newlines</p>
+</li>
+<li>
+<p>-nc, --nCRLF</p>
+
+<p>Use CRLF for newlines</p>
+</li>
+<li>
+<p>-ns, --nSource</p>
+
+<p><em>[Default]</em> Determines LF or CRLF for newlines by what the source file uses</p>
+</li>
+<li>
+<p>-q, --quiet</p>
+
+<p>Suppresses console error messages and info messages</p>
+</li>
+<li>
+<p>-s, --sensitive, --casesensitive</p>
+
+<p>The msgids inside curly-brace-references are matched case-insensitively 
+by default, the --sensitive option expands case-sensitive matches only.</p>
+</li>
+<li>
+<p>-c, --count    </p>
+
+<p>Returns the number of references contained in the source file, regardless
+  of whether the references are valid and can be expanded. No output file 
+  is written. Can be used as a second pass to confirm all references have
+  been expanded (none were misspelled etc), but</p>
+
+<p>WARNING: Plural forms are not supported and references contained in 
+  plural-form msgstrs are not counted.</p>
+</li>
+</ul><h4>
+<a name="returns" class="anchor" href="#returns"><span class="octicon octicon-link"></span></a>Returns:</h4>
+
+<ul>
+<li>0 - Success</li>
+<li>1 - fatal error - invalid arguments or file permissions.</li>
+<li>2 - fatal error - non-specific.</li>
+<li>3 - one or more warnings or non-fatal errors occurred.</li>
+<li>less than 0 - Success, but not all references could be expanded, the
+              negative return value indicates how may references were
+              found that could not be expanded.</li>
+</ul>
       </section>
     </div>
 
