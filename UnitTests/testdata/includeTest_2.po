@@ -2,12 +2,12 @@
 msgid "incl2 greeting"
 msgstr "Hi! 2"
 
-# $include "includePathTest\includeTest_SubDir.po"
+# $include "includePathTest\includeTest_SubDir_1.po"
 msgid "include-in-a-comment test"
 msgstr ""
 
 ; insert an error in includeTest_2.po
 
-#.$include "includePathTest/includeTest_SubDir.po"
+#.$include "includePathTest/includeTest_SubDir_1.po"
 msgid "include-in-a-dot-comment with forward slash"
 msgstr ""

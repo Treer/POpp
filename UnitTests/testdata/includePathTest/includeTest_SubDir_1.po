@@ -1,0 +1,8 @@
+# comment
+msgid "greeting"
+msgstr "Hi!"
+
+$include "includeTest_SubDir_2.po"
+
+; insert an error in includeTest_SubDir_1.po
+$include "includeTest_leaf.po"

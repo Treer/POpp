@@ -44,7 +44,7 @@
 
                     ReferenceInfo reference;
                     int nextRefSearchPos = 0;
-                    while ((reference = GetFirstReference(msgInfo.msgstr, nextRefSearchPos)) != null) {
+                    while ((reference = GetFirstReference(msgInfo.Msgstr_Value, nextRefSearchPos)) != null) {
                         result++;
                         nextRefSearchPos = reference.StartIndex + reference.Length;
                     }
@@ -99,7 +99,7 @@
                 // build a second dictionary of the msgstrs we are changing, indexed by the linenumber
                 Dictionary<int/*msgstr_lineNumber*/, MsgInfo> alteredMsgstrLines = new Dictionary<int, MsgInfo>();
                 foreach (MsgInfo msgInfo in keyValues.Values) {
-                    if (msgInfo.msgstr_containsChanges) alteredMsgstrLines.Add(msgInfo.msgstr_linenumber, msgInfo);
+                    if (msgInfo.Msgstr_ContainsChanges) alteredMsgstrLines.Add(msgInfo.Msgstr_Info.LineNumber, msgInfo);
                 }
 
                 // Write the lines to the output file, with any adjusted msgstr entries
@@ -116,14 +116,14 @@
                         MsgInfo msgInfo = null;
                         if (alteredMsgstrLines.TryGetValue(lineInfo.LineNumber, out msgInfo)) {
                             // We have our own version of this line
-                            if (msgInfo.msgstr_containsChanges) replaceLineWithAdjustedMsgstr = true;
+                            if (msgInfo.Msgstr_ContainsChanges) replaceLineWithAdjustedMsgstr = true;
                         }
 
                         // Only change the lines in the file that we need to, so all whitespace and weird user 
                         // formatting etc will be preserved.
                         if (replaceLineWithAdjustedMsgstr) {
-                            outputWriter.WriteLine("msgstr \"" + msgInfo.msgstr + "\"");
-                            linesToSkip = msgInfo.msgstr_lineCount;
+                            outputWriter.WriteLine("msgstr \"" + msgInfo.Msgstr_Value + "\"");
+                            linesToSkip = msgInfo.Msgstr_LineCount;
 
                         } else {
                             outputWriter.WriteLine(lineInfo.Line);
@@ -379,12 +379,12 @@
 
                         if (line.Type == LineType.Msgid) {
                             state = LineInfoState.AddingMsgid;
-                            newEntry.msgid = ExtractString(line);
+                            newEntry.Msgid_Value = ExtractString(line);
 
                         } else if (line.Type == LineType.Msgctxt) {
                             // msgctxt is optional, but if present it appears before the msgid
                             state = LineInfoState.AddingMsgctxt;
-                            newEntry.msgctxt = ExtractString(line); 
+                            newEntry.Msgctxt_Value = ExtractString(line); 
 
                         } else if (line.Type == LineType.Msgstr || line.Type == LineType.StrContinuation) {
                             // An entry can't start with a msgstr or string-continuation
@@ -395,11 +395,11 @@
                     case LineInfoState.AddingMsgctxt:                        
 
                         if (line.Type == LineType.StrContinuation) {
-                            newEntry.msgctxt += ExtractString(line);
+                            newEntry.Msgctxt_Value += ExtractString(line);
 
                         } else if (line.Type == LineType.Msgid) {
                             state = LineInfoState.AddingMsgid;
-                            newEntry.msgid = ExtractString(line);
+                            newEntry.Msgid_Value = ExtractString(line);
                         
                         } else {
                             // msgctxt is optional, but if present it appears before the msgid
@@ -410,12 +410,12 @@
                     case LineInfoState.AddingMsgid:
 
                         if (line.Type == LineType.StrContinuation) {
-                            newEntry.msgid += ExtractString(line);
+                            newEntry.Msgid_Value += ExtractString(line);
 
                         } else if (line.Type == LineType.Msgstr) {
                             state = LineInfoState.AddingMsgstr;
-                            newEntry.msgstr = ExtractString(line);
-                            newEntry.msgstr_linenumber = line.LineNumber;
+                            newEntry.Msgstr_Value = ExtractString(line);
+                            newEntry.Msgstr_Info = line;
                         
                         } else if (line.Type == LineType.Msgid) {
                             // We can't have two msgids in a row!
@@ -430,8 +430,8 @@
                     case LineInfoState.AddingMsgstr:
 
                         if (line.Type == LineType.StrContinuation) {
-                            newEntry.msgstr += ExtractString(line);
-                            newEntry.msgstr_lineCount++;
+                            newEntry.Msgstr_Value += ExtractString(line);
+                            newEntry.Msgstr_LineCount++;
 
                         } else if (line.Type == LineType.Whitespace) {
                             // We've found the end of the entry
@@ -440,7 +440,7 @@
                                 string uniqueID = newEntry.UniqueID(_options.CaseSensitiveIDs);
                                 if (result.ContainsKey(uniqueID)) {
                                     // Duplicate msgids encountered - Abort if the msgstr contains a reference, as duplicate msgids are now supported yet and will result in the reference not expanding
-                                    TestDuplicateEntry(line, newEntry);
+                                    TestDuplicateEntry(newEntry);
                                 } else {
                                     result.Add(newEntry.UniqueID(_options.CaseSensitiveIDs), newEntry);
                                 }
@@ -453,7 +453,7 @@
                             ErrorEncountered(line, "Multiple msgstrs encountered, PO plural-forms are not currently supported :( - skipping line ");
 
                         } else {
-                            ErrorEncountered(line, "Unexpected line encountered at end of entry \"" + newEntry.msgid + "\" (was expecting whitespace)");
+                            ErrorEncountered(line, "Unexpected line encountered at end of entry \"" + newEntry.Msgid_Value + "\" (was expecting whitespace)");
                         }
                         break;
                 }
@@ -466,12 +466,12 @@
         /// Duplicate msgids encountered - Abort if the msgstr contains a reference, as
         /// duplicate msgids are now supported yet and will result in the msgstr not being expanded.
         /// </summary>
-        void TestDuplicateEntry(LineInfo line, MsgInfo duplicateEntry) {
+        void TestDuplicateEntry(MsgInfo duplicateEntry) {
 
-            if (GetFirstReference(duplicateEntry.msgstr, 0) != null) {
-                throw new LineException(line, "Duplicate msgid \"" + duplicateEntry.msgid + "\" encountered - Aborting because this is not supported yet and the msgstr contains a reference which popp will fail to expand.");
+            if (GetFirstReference(duplicateEntry.Msgstr_Value, 0) != null) {
+                throw new LineException(duplicateEntry.Msgstr_Info, "Duplicate msgid \"" + duplicateEntry.Msgid_Value + "\" encountered - Aborting because this is not supported yet and the msgstr contains a reference which popp will fail to expand.");
             } else {
-                ErrorEncountered(line, "Duplicate msgid \"" + duplicateEntry.msgid + "\" encountered (non-fatal).");
+                ErrorEncountered(duplicateEntry.Msgstr_Info, "Duplicate msgid \"" + duplicateEntry.Msgid_Value + "\" encountered (non-fatal).");
             }
         }
 
@@ -510,7 +510,7 @@
         {
             // mark all MsgInfos that don't need to be expanded
             foreach (MsgInfo msgInfo in msgInfoDictionary.Values) {
-                msgInfo.msgstr_containsUnexpandedReferences = ContainsReference(msgInfo.msgstr, msgInfoDictionary);
+                msgInfo.Msgstr_ContainsUnexpandedReferences = ContainsReference(msgInfo.Msgstr_Value, msgInfoDictionary);
             }
 
             int successfulExpansionsTotal = 0;
@@ -521,32 +521,32 @@
 
                 // Expand any references to Msgstrs that don't themselves still need expanding
                 foreach (MsgInfo msgInfo in msgInfoDictionary.Values) {
-                    if (msgInfo.msgstr_containsUnexpandedReferences) {
+                    if (msgInfo.Msgstr_ContainsUnexpandedReferences) {
 
                         ReferenceInfo reference;
                         int nextRefSearchPos = 0;
-                        while ((reference = GetFirstReference(msgInfo.msgstr, nextRefSearchPos)) != null) {
+                        while ((reference = GetFirstReference(msgInfo.Msgstr_Value, nextRefSearchPos)) != null) {
 
                             nextRefSearchPos = reference.StartIndex + reference.Length;
 
                             MsgInfo referredMsgInfo;
                             if (msgInfoDictionary.TryGetValue(reference.UniqueID(_options.CaseSensitiveIDs), out referredMsgInfo)) {
                                 // We have a msgstr with a msgid that matches the reference
-                                if (referredMsgInfo.msgstr_containsUnexpandedReferences) {
+                                if (referredMsgInfo.Msgstr_ContainsUnexpandedReferences) {
                                     // Not going to expand it unless/until the referred msgstr has been expanded. This prevents
                                     // indirect self-referential loops etc from being expanded
                                 } else {
                                     // Replace the reference with the referred msgstr
-                                    msgInfo.msgstr =
-                                        msgInfo.msgstr.Substring(0, reference.StartIndex) +
-                                        referredMsgInfo.msgstr +
-                                        msgInfo.msgstr.Substring(reference.StartIndex + reference.Length, msgInfo.msgstr.Length - (reference.StartIndex + reference.Length));
+                                    msgInfo.Msgstr_Value =
+                                        msgInfo.Msgstr_Value.Substring(0, reference.StartIndex) +
+                                        referredMsgInfo.Msgstr_Value +
+                                        msgInfo.Msgstr_Value.Substring(reference.StartIndex + reference.Length, msgInfo.Msgstr_Value.Length - (reference.StartIndex + reference.Length));
 
                                     // If that was the last reference in the msgstr then we must un-mark it as containing 
                                     // unexpanded references.
-                                    msgInfo.msgstr_containsUnexpandedReferences = ContainsReference(msgInfo.msgstr, msgInfoDictionary);
+                                    msgInfo.Msgstr_ContainsUnexpandedReferences = ContainsReference(msgInfo.Msgstr_Value, msgInfoDictionary);
 
-                                    msgInfo.msgstr_containsChanges = true;
+                                    msgInfo.Msgstr_ContainsChanges = true;
                                     successfulExpansions++;
                                 }
                             }
@@ -595,13 +595,13 @@
 
                 ReferenceInfo reference;
                 int nextRefSearchPos = 0;
-                while ((reference = GetFirstReference(msgInfo.msgstr, nextRefSearchPos)) != null) {
+                while ((reference = GetFirstReference(msgInfo.Msgstr_Value, nextRefSearchPos)) != null) {
                     result++;
                     nextRefSearchPos = reference.StartIndex + reference.Length;
 
                     // Use DisplayInfo to avoid setting the errorLevel, since the negative unexpandedReferenceCount
                     // will be assigned to the errorLevel if there are no other errors.
-                    DisplayInfo("Warning on line " + msgInfo.msgstr_linenumber + ": Could not resolve reference \"" + reference.Msgid + "\"");
+                    DisplayInfo("Warning on line " + LineNumberToString(msgInfo.Msgstr_Info) + ": Could not resolve reference \"" + reference.Msgid + "\"");
                 }
             }
             return result;
@@ -660,23 +660,36 @@
                 if (lineInfo == null) {   
                     // todo: write this to stderr   
                     Console.WriteLine("Error: " + message);
-                } else if (lineInfo.IncludeFileID >= 0) {
-                    Console.WriteLine(
-                        String.Format(
-                            "Error on line {0} of \"{1}\": {2}",
-                            lineInfo.LineNumber,
-                            Path.GetFileName(_includeFileNames[lineInfo.IncludeFileID]),
-                            message
-                        )
-                    );
                 } else {
-                    Console.WriteLine("Error on line " + lineInfo.LineNumber + ": " + message);
+                    Console.WriteLine("Error on " + LineNumberToString(lineInfo) + ": " + message);
                 }
             }
             if (_errorLevel == 0) _errorLevel = (int)ErrorLevel.NonFatalError;
         }
 
 
+        /// <summary>
+        /// Returns either 'line x' or 'line x of "file.po"' depending on whether the 
+        /// line came from the source file or an included file.
+        /// </summary>
+        /// <param name="lineInfo"></param>
+        /// <returns></returns>
+        string LineNumberToString(LineInfo lineInfo) {
+
+            if (lineInfo.IncludeFileID >= 0) {
+
+                return String.Format(
+                        "line {0} of \"{1}\"",
+                        lineInfo.LineNumber,
+                        Path.GetFileName(_includeFileNames[lineInfo.IncludeFileID])
+                );
+
+            } else {
+                return "line " + lineInfo.LineNumber;
+            }
+        }
+        
+        
         /// <summary>
         /// Use this form of ErrorEncountered only if the line number is not known.
         /// </summary>
