@@ -157,9 +157,22 @@ p img {
   border: none;
 }
 
+.inlinecode {
+  width: 100%;
+  color: #449;
+/*
+  background-color: #fafafa;
+  padding: 2px;*/
+
+  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
+  font-size: 14px;
+}
+
+
 pre, code {
   width: 100%;
-  color: #222;
+  /*color: #222;*/
+  color: #449;
   background-color: #fff;
 
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
@@ -192,16 +205,15 @@ blockquote {
   color: #666;
   margin-bottom: 20px;
   padding: 0 0 0 20px;
-  border-left: 3px solid #bbb;
+  /*border-left: 3px solid #bbb;*/
 }
-
 
 ul, ol, dl {
   margin-bottom: 15px
 }
 
 ul {
-  list-style: inside;
+  list-style: outside;
   padding-left: 20px;
 }
 
@@ -315,12 +327,22 @@ Full-Width Styles
 
 #downloads {
   position: absolute;
-  width: 210px;
+  width: 300px;
   z-index: 10;
   bottom: -40px;
   right: 0;
   height: 70px;
   background: url('../images/icon_download.png') no-repeat 0% 90%;
+}
+
+.exe_download_link {
+  display: block;
+  float: right;
+  width: 90px;
+  height:70px;
+  text-indent: -5000px;
+  overflow: hidden;
+  background: url(../images/sprite_download.png) no-repeat bottom left;
 }
 
 .zip_download_link {
@@ -330,7 +352,7 @@ Full-Width Styles
   height:70px;
   text-indent: -5000px;
   overflow: hidden;
-  background: url(../images/sprite_download.png) no-repeat bottom left;
+  background: url(../images/sprite_download.png) no-repeat bottom center;
 }
 
 .tar_download_link {
@@ -344,8 +366,12 @@ Full-Width Styles
   margin-left: 10px;
 }
 
-.zip_download_link:hover {
+.exe_download_link:hover {
   background: url(../images/sprite_download.png) no-repeat top left;
+}
+
+.zip_download_link:hover {
+  background: url(../images/sprite_download.png) no-repeat top center;
 }
 
 .tar_download_link:hover {

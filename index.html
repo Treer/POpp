@@ -24,6 +24,7 @@
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/Treer/POpp/zipball/master">Download this project as a .zip file</a>
               <a class="tar_download_link" href="https://github.com/Treer/POpp/tarball/master">Download this project as a tar.gz file</a>
+              <a class="exe_download_link" href="https://mega.co.nz/#!zYkiSDIA!zzQkqeOChgqUiUYsXKQDNaW1X0ZMdw2suyYrrbtUFt4">Download Windows .exe file</a>
             </section>
         </header>
     </div>
@@ -35,7 +36,10 @@
 <a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h4>
 
 <p>The preprocessor allows your translated text to reference
-to other items of translated text, in a way that should work within any .PO editor. See the <a href="https://www.gnu.org/software/gettext/manual/html_node/index.html">GNU gettext documentation</a> for information about PO files.</p>
+to other items of translated text, in a way that should work within any .PO editor. 
+The use of <span class="inlinecode">$include</span> statements is also supported, and conditional directives might be added in future.</p>
+
+<p>See the <a href="https://www.gnu.org/software/gettext/manual/html_node/index.html">GNU gettext documentation</a> for information about PO files.</p>
 
 <p>For example, you can have .PO source files like this:</p>
 
@@ -55,8 +59,6 @@ msgid "Welcome text"
 msgstr "Congratulations on your download of POpp"
 </code></pre>
 
-<p>popp also allows .PO files to contain $include statements. Conditional directives might be added in future.</p>
-
 <h4>
 <a name="current-version" class="anchor" href="#current-version"><span class="octicon octicon-link"></span></a>Current version:</h4>
 
@@ -72,24 +74,23 @@ msgstr "Congratulations on your download of POpp"
 </ul><h2>
 <a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation:</h2>
 
-<p>Expands .po msgstrs which reference other msgstr values via a curly brace
-notation, for example <code>{id:ProductName_short}</code> will be expanded to the msgstr
-which has the msgid of <code>ProductName_short</code>.</p>
+<p>.PO msgstrs can reference other msgstr values using a curly brace
+notation, for example <span class="inlinecode">{id:ProductName_short}</span> will be expanded to the msgstr
+which has the msgid of <i>ProductName_short</i>.</p>
 
 <h4>
 <a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage:</h4>
 
-<pre><code>popp [options] source.popp [dest.po]
-</code></pre>
+<blockquote><span class="inlinecode">popp [options] source.popp [dest.po]</span></blockquote>
 
 <h4>
 <a name="brace-notation" class="anchor" href="#brace-notation"><span class="octicon octicon-link"></span></a>Brace notation:</h4>
 
 <ul>
 <li>
-<code>{id:msgid}</code> or <code>{id:msgid-msgctxt}</code>
+<span class="inlinecode">{id:msgid}</span> or <span class="inlinecode">{id:msgid-msgctxt}</span>
 </li>
-<li>references can be escaped with a backslash, e.g. <code>\{id:msgid}</code> is ignored.<br>
+<li>references can be escaped with a backslash, e.g. <span class="inlinecode">\{id:msgid}</span> is ignored.<br>
 </li>
 </ul><p><strong>WARNING</strong>: Plural forms are not supported, the file can still be processed,
 however lines begining with "msgstr[<em>n</em>]" will not have their content expanded,
@@ -122,34 +123,33 @@ risk having the unicode characters mapped to what the shell can handle.</p>
 
 <ul>
 <li>
-<p>-nl, --nLF</p>
-
+<p class="inlinecode">-nl, --nLF</p>
 <p>Use LF for newlines</p>
 </li>
-<li>
-<p>-nc, --nCRLF</p>
 
+<li>
+<p class="inlinecode">-nc, --nCRLF</p>
 <p>Use CRLF for newlines</p>
 </li>
-<li>
-<p>-ns, --nSource</p>
 
+<li>
+<p class="inlinecode">-ns, --nSource</p>
 <p><em>[Default]</em> Determines LF or CRLF for newlines by what the source file uses</p>
 </li>
-<li>
-<p>-q, --quiet</p>
 
+<li>
+<p class="inlinecode">-q, --quiet</p>
 <p>Suppresses console error messages and info messages</p>
 </li>
-<li>
-<p>-s, --sensitive, --casesensitive</p>
 
+<li>
+<p class="inlinecode">-s, --sensitive, --casesensitive</p>
 <p>The msgids inside curly-brace-references are matched case-insensitively 
 by default, the --sensitive option expands case-sensitive matches only.</p>
 </li>
-<li>
-<p>-c, --count    </p>
 
+<li>
+<p class="inlinecode">-c, --count    </p>
 <p>Returns the number of references contained in the source file, regardless
   of whether the references are valid and can be expanded. No output file 
   is written. Can be used as a second pass to confirm all references have
@@ -158,6 +158,7 @@ by default, the --sensitive option expands case-sensitive matches only.</p>
 <p>WARNING: Plural forms are not supported and references contained in 
   plural-form msgstrs are not counted.</p>
 </li>
+
 </ul><h4>
 <a name="returns" class="anchor" href="#returns"><span class="octicon octicon-link"></span></a>Returns:</h4>
 
