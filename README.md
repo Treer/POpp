@@ -4,9 +4,10 @@
 
 For Gnu .po language translation files. See the [GNU gettext documentation](https://www.gnu.org/software/gettext/manual/html_node/index.html) for information about PO files.
 
-
-This preprocessor allows your translated text to contain references
-to other items of translated text, in a way that should work within any .PO editor. 
+The preprocessor allows your translated text to reference other items of 
+translated text, in a way that should work within any .PO editor. The use 
+of $include statements is also supported, and conditional directives 
+might be added in future.
 
 For example, you can have .PO source files like this:
 
@@ -25,17 +26,15 @@ which can be converted automatically to this:
     msgstr "Congratulations on your download of POpp"
 
 
-
-In future, popp may also support $include and conditional directives such as $define, $if, $else etc.
-
 #### Currently:
-  * **The Windows executable can be [downloaded here](https://mega.co.nz/#!zYkiSDIA!zzQkqeOChgqUiUYsXKQDNaW1X0ZMdw2suyYrrbtUFt4)** (v0.12)
-   - md5: f60c75ad0efeb28194430cd62ab0a9ce *popp.exe
-   - sha256: 6ad63858827c9bd92282136fad26f831c74489f25dd23aa1801bb88bf9c0a134 *popp.exe
-  * It does *not* support conditional directives.
-  * It does *not* support references to or from plural forms, though the rest of the file will be processed.
-  * I haven't tried this in a real project environment yet, it's only been tested with the automatic test cases - take care.
+  * **The Windows executable can be [downloaded here](https://mega.co.nz/#!7NVEHCZQ!zL9zvNUzWA-Hl5yyHA5jLY-PstFutCUpRNjujEWAO5M)** (v0.2.0)
+   - md5: 51f4071976faf82f7cbcd8cf9325fe02 *popp.exe
+  * It does *not* support references to or from plural forms, though the rest of the file can be processed.
+  * I'm still in the process of trying popp in a real project environment, so for now assume it's only been tested with the automatic test cases, and take care.
 
+#### Licence:
+MIT X11
+  
 #### Language:
   * C#, compiles with Mono and Visual Studio, but the UnitTests project is a Visual Studio one (VS Express 2013).
   * popp requires v3.5 of the .Net framework.
@@ -56,8 +55,19 @@ which has the msgid of `ProductName_short`.
  * references can be escaped with a backslash, e.g. `\{id:msgid}` is ignored.	
 	
 **WARNING**: Plural forms are not supported, the file can still be processed,
-however lines begining with "msgstr[_n_]" will not have their content expanded,
+however lines begining with "msgstr[_n_]" cannot contain references,
 and plural forms cannot be referenced with the brace notation.
+
+#### Include directives can have the following notation:                                                                                                                                                         
+                                                                                                                                                                                                            
+    $include "fileName.po"   
+    	
+    # $include "fileName.po"                                                                                                                                                                                
+    #.$include "fileName.po"                                                                                                                                                                                
+                                                                                                                                                                                                            
+The .po hash-comment notations can be used if the file must be editable or                                                                                                                                  
+parsable by other .po tools before being processed by popp.
+
 
 Output files are written in UTF-8. If your source languages use unicode
 characters that your shell can't display, then avoid using pipes and stick with 
@@ -67,17 +77,14 @@ specifying an input file and an output file. (Or proceed very carefully)
 #### Options:
 
  * -nl, --nLF
-  - Use LF for newlines
+  - Use LF for newlines.
 
  * -nc, --nCRLF
-  - Use CRLF for newlines
+  - Use CRLF for newlines.
 
  * -ns, --nSource
   - _[Default]_ Determines LF or CRLF for newlines by what the source file
-    uses
-
- * -q, --quiet
-  - Suppresses console error messages and info messages
+    uses.
 
  * -s, --sensitive, --casesensitive
   - The msgids inside curly-brace-references are matched case-insensitively 
@@ -91,11 +98,15 @@ specifying an input file and an output file. (Or proceed very carefully)
 	
     WARNING: Plural forms are not supported and references contained in 
     plural-form msgstrs are not counted.
+                                                                                                                                                                                                            
+-i [path], --includeDirectory [path]                                                                                                                                                                        
+    Adds a directory to the end of the search path used to locate files                                                                                                                                     
+    specified by $include directives.
 	
- * -dSym
-  - _[Not implemented]_ Defines a symbol for evaluation of conditional
-    expressions such as $if and $elseif
+ * -q, --quiet
+  - Suppresses console error messages and info messages
 
+  
 #### Returns:
  * 0 - Success
  * 1 - fatal error - invalid arguments or file permissions.
