@@ -50,12 +50,12 @@ msgstr "three {id:this ref doesn't exist} four {id:5} six {id:this ref doesn't e
 msgid "5"
 msgstr "five"
 
-#. Test fatal-error when encountering plural forms with references in the extra msgstrs
+#. Test graceful failing of plural forms provided they don't contain any references in their msgstrs
 msgid "plural form"
 msgid_plural "plural forms"
 msgstr[0] "no forms"
-msgstr[1] "one form {id:5}"
-msgstr[2] "one form {id:plural form}"
+msgstr[1] "one form"
+msgstr[2] "two forms"
 
 msgid "plural references test"
 msgstr "{id:plural form} and {id:plural forms}"

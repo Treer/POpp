@@ -7,9 +7,9 @@ Error on line 11: Could not determine the line type
 Error on line 5 of "includeTest_leaf.po": Could not determine the line type
 Error on line 3 of "includeTest_SubDir_1.po": Duplicate msgid "greeting" encountered (non-fatal).
 Error on line 6 of "includeTest_2.po": Unexpected line encountered at end of entry "test references work accross includes" (was expecting whitespace)
-Error on line 7 of "includeTest_2.po": Multiple msgstrs encountered, PO plural-forms are not currently supported :( - skipping line 
+Error on line 7 of "includeTest_2.po": Multiple msgstrs encountered, PO plural-forms are not currently supported. Non-fatal as line contains nothing to expand (skipping).
 Error on line 3 of "includeTest_SubDir_1.po": Duplicate msgid "greeting" encountered (non-fatal).
 Error on line 3 of "includeTest_leaf.po": Duplicate msgid "leaf greeting" encountered (non-fatal).
 Error on line 12 of "includeTest_2.po": Unexpected line encountered at end of entry "test references work accross includes" (was expecting whitespace)
-Error on line 13 of "includeTest_2.po": Multiple msgstrs encountered, PO plural-forms are not currently supported :( - skipping line 
+Error on line 13 of "includeTest_2.po": Multiple msgstrs encountered, PO plural-forms are not currently supported. Non-fatal as line contains nothing to expand (skipping).
 Error on line 8 of "includeTest_leaf.po": Duplicate msgid "test references work accross includes" encountered - Aborting because this is not supported yet and the msgstr contains a reference which popp will fail to expand.

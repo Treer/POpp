@@ -57,7 +57,7 @@
             } catch (LineException ex) {
 
                 ErrorEncountered(ex.LineInfo, ex.Message);
-                _errorLevel = (int)ErrorLevel.FatalError_Internal;
+                result = -1;
 
             } catch (Exception ex) {
 
@@ -450,7 +450,8 @@
                             newEntry = new MsgInfo();
 
                         } else if (line.Type == LineType.Msgstr) {
-                            ErrorEncountered(line, "Multiple msgstrs encountered, PO plural-forms are not currently supported :( - skipping line ");
+                            // Multiple msgstrs encountered, PO plural-forms are not currently supported :(
+                            TestPluralForm(line);
 
                         } else {
                             ErrorEncountered(line, "Unexpected line encountered at end of entry \"" + newEntry.Msgid_Value + "\" (was expecting whitespace)");
@@ -472,6 +473,21 @@
                 throw new LineException(duplicateEntry.Msgstr_Info, "Duplicate msgid \"" + duplicateEntry.Msgid_Value + "\" encountered - Aborting because this is not supported yet and the msgstr contains a reference which popp will fail to expand.");
             } else {
                 ErrorEncountered(duplicateEntry.Msgstr_Info, "Duplicate msgid \"" + duplicateEntry.Msgid_Value + "\" encountered (non-fatal).");
+            }
+        }
+
+        /// <summary>
+        /// Plural msgstr encountered - Abort if it contains a reference, as plural forms
+        /// are not supported yet and will result in the msgstr not being expanded.
+        /// </summary>
+        void TestPluralForm(LineInfo pluralMsgstrLine) {
+
+            if (GetFirstReference(pluralMsgstrLine.Line, 0) != null) {
+
+                throw new LineException(pluralMsgstrLine, "Multiple msgstrs encountered, PO plural-forms are not currently supported - Aborting because the msgstr contains a reference which popp will fail to expand.");
+
+            } else {
+                ErrorEncountered(pluralMsgstrLine, "Multiple msgstrs encountered, PO plural-forms are not currently supported. Non-fatal as line contains nothing to expand (skipping).");
             }
         }
 
