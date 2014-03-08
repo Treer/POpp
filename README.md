@@ -58,18 +58,20 @@ which has the msgid of `ProductName_short`.
 however lines begining with "msgstr[_n_]" cannot contain references,
 and plural forms cannot be referenced with the brace notation.
 
-#### Include directives can have the following notation:                                                                                                                                                         
-                                                                                                                                                                                                            
-    $include "fileName.po"   
-    	
-    # $include "fileName.po"                                                                                                                                                                                
-    #.$include "fileName.po"                                                                                                                                                                                
-                                                                                                                                                                                                            
-The .po hash-comment notations can be used if the file must be editable or                                                                                                                                  
+#### Include directive notation:
+
+    $include "fileName.po"
+    
+    # $include "fileName.po"
+    #.$include "fileName.po"
+
+
+The .po hash-comment notations can be used if the file must be editable or 
 parsable by other .po tools before being processed by popp.
 
 
-Output files are written in UTF-8. If your source languages use unicode
+#### Output 
+Files are written in UTF-8. If your source languages use unicode
 characters that your shell can't display, then avoid using pipes and stick with 
 specifying an input file and an output file. (Or proceed very carefully)
 
@@ -99,8 +101,8 @@ specifying an input file and an output file. (Or proceed very carefully)
     WARNING: Plural forms are not supported and references contained in 
     plural-form msgstrs are not counted.
                                                                                                                                                                                                             
--i [path], --includeDirectory [path]                                                                                                                                                                        
-    Adds a directory to the end of the search path used to locate files                                                                                                                                     
+ * -i [path], --includeDirectory [path]
+  - Adds a directory to the end of the search path used to locate files
     specified by $include directives.
 	
  * -q, --quiet
