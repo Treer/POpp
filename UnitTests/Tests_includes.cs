@@ -26,7 +26,7 @@
             File.Delete("../../testdata/includeTest_1_errors.txt");
 
 
-            int result = ShellExecute("popp.exe ../../testdata/includeTest_1.po ../../testdata/includeTest_1_result.po > ../../testdata/includeTest_1_errors.txt");
+            int result = ShellExecute("popp.exe ../../testdata/includeTest_1.po ../../testdata/includeTest_1_result.po 2> ../../testdata/includeTest_1_errors.txt");
 
             Assert.AreEqual((int)ErrorLevel.FatalError_Internal, result, "includeTest_1.po should cause errors so grievious that popp aborts, but no FatalError_Internal happened");
             Assert.IsTrue(FileCompare("../../testdata/includeTest_1_errors.txt", "../../testdata/includeTest_1_expectedErrors.txt"), "../../testdata/includeTest_1_errors.txt does not match includeTest_1_expectedErrors.txt");
@@ -37,5 +37,18 @@
             // test that --includedirectory works
 
         }
+
+        [TestMethod]
+        public void Include_MissingFiles() {
+
+            File.Delete("../../testdata/includeTest_missingresult.txt");
+
+            // This should fail and not create a file
+            int result = Program.Main(new string[] { "../../testdata/includeTest_missing.po", "../../testdata/includeTest_missingresult.po" });
+            Assert.AreEqual((int)ErrorLevel.FatalError_Internal, result, "includeTest_missing.po should references a non-existant file, so popp should abort, but no FatalError_Internal happened");
+            Assert.IsFalse(File.Exists("../../testdata/includeTest_missingresult.po"), "includeTest_missingresult.po should not have been written");
+        }
+
+
     }
 }

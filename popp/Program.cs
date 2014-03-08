@@ -155,7 +155,7 @@ namespace popp
                                     // When counting references in the input file we don't need an
                                     // output file - the count result is returned as the errorLevel.
                                 } else {
-                                    Console.WriteLine(
+                                    Console.Error.WriteLine(
                                         "Error: When only a source file is provided, popp will assume a .po extension\r\n" +
                                         "       for the output file, but this input file already has a .po extension.\r\n\r\n" +
                                         "       If you want the output sent to stdout instead, then specify a hyphen (-)\r\n" +
@@ -224,11 +224,11 @@ namespace popp
                     includeDir = Path.GetFullPath(directory);
                 }
             } catch (Exception ex) {
-                Console.WriteLine("Argument error, could not find directory \"" + directory + "\": " + ex);
+                Console.Error.WriteLine("Argument error, could not find directory \"" + directory + "\": " + ex);
             }
 
             if (String.IsNullOrEmpty(includeDir)) {
-                Console.WriteLine("Argument error, could not find directory \"" + directory + "\"");
+                Console.Error.WriteLine("Argument error, could not find directory \"" + directory + "\"");
             } else {
                 options.IncludeDirectories.Add(includeDir);
                 result = true;
@@ -258,7 +258,7 @@ namespace popp
                         sourceDirectory = Path.GetDirectoryName(Path.GetFullPath(sname));
                     } catch (Exception ex) {
                         // This shouldn't happen unless permissions are really screwy, or I've made a terrible mistake.
-                        Console.WriteLine("Non-fatal exception attempting to read source path: " + ex);
+                        Console.Error.WriteLine("Non-fatal exception attempting to read source path: " + ex);
                     }
                 }
 
@@ -268,7 +268,6 @@ namespace popp
                 } else {
                     if (dname == String.Empty) {
                         outputWriter = Console.Out;
-                        options.Quiet = true; // Don't output info messages in the middle of the file ;)
                     } else {
 
                         // Unicode BOM causes syntax errors in the gettext utils
@@ -314,7 +313,7 @@ namespace popp
 
             } catch (Exception ex) {
 
-                Console.WriteLine("Error: {0}", ex.Message);
+                Console.Error.WriteLine("Error: {0}", ex.Message);
                 if (sourceStream != null) sourceStream.Close();
                 if (destStream   != null) destStream.Close();
 

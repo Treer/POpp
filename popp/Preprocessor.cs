@@ -658,10 +658,9 @@
         {
             if (!_options.Quiet) {
                 if (lineInfo == null) {   
-                    // todo: write this to stderr   
-                    Console.WriteLine("Error: " + message);
+                    Console.Error.WriteLine("Error: " + message);
                 } else {
-                    Console.WriteLine("Error on " + LineNumberToString(lineInfo) + ": " + message);
+                    Console.Error.WriteLine("Error on " + LineNumberToString(lineInfo) + ": " + message);
                 }
             }
             if (_errorLevel == 0) _errorLevel = (int)ErrorLevel.NonFatalError;
@@ -704,7 +703,7 @@
         /// </summary>
         void DisplayInfo(string message)
         {
-            if (!_options.Quiet) Console.WriteLine(message);
+            if (!_options.Quiet) Console.Error.WriteLine(message); // Diagnostics and non-errors etc still goes to stderr so that it doesn't interefere with the output data.
         }
 
 
