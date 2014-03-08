@@ -382,6 +382,9 @@ namespace popp
         }
 
         static void ShowVersion() {
+            // I will leave this writing to stdout instead of stderr because the only time it's
+            // invoked is with the --version argument, so it's the output the user intends from the app.
+            // (Not sure it's the right choice TBH!)
             Console.WriteLine(cProgramNameFull + " " + ProgramVersion);
         }
 
@@ -407,7 +410,7 @@ namespace popp
 
             string Usage = cProgramNameFull + " " + ProgramVersion +
                 @"
- (Available from github.com/Treer/POpp)
+ (Available from http://treer.github.io/POpp/)
 
 Usage:
     popp [options] source.popp [dest.po]";
@@ -426,8 +429,19 @@ Brace notation:
     references can be escaped with a backslash, e.g. \{id:msgid} is ignored.
 
 WARNING: Plural forms are not supported, the file can still be processed,
-however lines begining with ""msgstr[n]"" will not have their content 
-expanded, and plural forms cannot be referenced with the brace notation.
+however lines begining with ""msgstr[n]"" cannot contain references, and 
+plural forms cannot be referenced with the brace notation.
+
+
+Include directives can have the following notation:
+
+    $include ""fileName.po""
+    # $include ""fileName.po""
+    #.$include ""fileName.po""
+
+The .po hash-comment notations can be used if the file must be editable or
+parsable by other .po tools before being processed by popp.
+
 
 Output files are written in UTF-8
 
@@ -438,17 +452,14 @@ Output files are written in UTF-8
 Options:
 
 -nl, --nLF
-    Use LF for newlines
+    Use LF for newlines.
 
 -nc, --nCRLF
-    Use CRLF for newlines 
+    Use CRLF for newlines.
     
 -ns, --nSource
     [Default] Determines LF or CRLF for newlines by what the source file
     uses.
-
--q, --quiet
-    Suppresses console error messages and info messages
 
 -s, --sensitive, --casesensitive
     The msgids inside curly-brace-references are matched case-insensitively 
@@ -464,6 +475,13 @@ Options:
     WARNING: Plural forms are not supported and references contained in 
     plural-form msgstrs are not counted.
 
+-i [path], --includeDirectory [path]
+    Adds a directory to the end of the search path used to locate files 
+    specified by $include directives.    
+
+-q, --quiet
+    Suppresses console error messages and info messages.
+
     ";
             Usage += @"
 
@@ -476,7 +494,7 @@ Returns:
                   negative return value indicates how may references were 
                   found that could not be expanded.
 ";
-            Console.WriteLine(Usage);
+            Console.Error.WriteLine(Usage);
         }
 
     }

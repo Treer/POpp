@@ -3,26 +3,26 @@
     using System;
 
     /// <summary>
-    /// Information about a "{id:my msgid}" reference contained in a string
+    /// Immutable information about a "{id:my msgid}" reference contained in a string
     /// </summary>
     public class ReferenceInfo
     {        
         /// <summary>
         /// 0-based index of the start of the reference
         /// </summary>
-        public int StartIndex;
+        public int StartIndex { get; private set; }
 
         /// <summary>
         /// length of the reference
         /// </summary>
-        public int Length;
+        public int Length { get; private set; }
 
         /// <summary>
         /// WARNING - do not use this for comparisons, use UniqueID instead.
         /// msgid of the string that should replace the reference, optionally with a hyphen followed by
         /// the msgctxt
         /// </summary>
-        public string Msgid;
+        public string Msgid { get; private set; }
 
         /// <summary>
         /// The PO format allows entries to have the same msgid if their context is different,
