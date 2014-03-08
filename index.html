@@ -24,7 +24,7 @@
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/Treer/POpp/zipball/master">Download this project as a .zip file</a>
               <a class="tar_download_link" href="https://github.com/Treer/POpp/tarball/master">Download this project as a tar.gz file</a>
-              <a class="exe_download_link" href="https://mega.co.nz/#!zYkiSDIA!zzQkqeOChgqUiUYsXKQDNaW1X0ZMdw2suyYrrbtUFt4">Download Windows .exe file</a>
+              <a class="exe_download_link" href="https://mega.co.nz/#!7NVEHCZQ!zL9zvNUzWA-Hl5yyHA5jLY-PstFutCUpRNjujEWAO5M">Download Windows .exe file</a>
             </section>
         </header>
     </div>
@@ -64,10 +64,10 @@ msgstr "Congratulations on your download of POpp"
 
 <ul>
 <li>
-<strong>The Windows executable can be <a href="https://mega.co.nz/#!zYkiSDIA!zzQkqeOChgqUiUYsXKQDNaW1X0ZMdw2suyYrrbtUFt4">downloaded here</a></strong> (v0.12)
+<strong>The Windows executable can be <a href="https://mega.co.nz/#!7NVEHCZQ!zL9zvNUzWA-Hl5yyHA5jLY-PstFutCUpRNjujEWAO5M">downloaded here</a></strong> (v0.2.0)
 
 <ul>
-<li>md5: f60c75ad0efeb28194430cd62ab0a9ce *popp.exe</li>
+<li>md5: 51f4071976faf82f7cbcd8cf9325fe02 *popp.exe</li>
 </ul>
 </li>
 <li>I'm still in the process of trying popp in a real project environment, so for now assume it's only been tested with the automatic test cases, and take care.</li>
@@ -107,8 +107,8 @@ and plural forms cannot be referenced with the brace notation.</p>
 #.$include "file.po"
 </code></pre>
 
-<p>Use the hash-comment notation if you want the file to editable in a .PO editor 
-or tool before it will be passed through popp.</p>
+<p>The .po hash-comment notations can be used if the file must be editable or 
+parsable by other .po tools before being processed by popp.</p>
 
 <h4>
 <a name="output-and-pipes" class="anchor" href="#output-and-pipes"><span class="octicon octicon-link"></span></a>Output, and pipes</h4>
@@ -138,11 +138,6 @@ risk having the unicode characters mapped to what the shell can handle.</p>
 </li>
 
 <li>
-<p class="inlinecode">-q, --quiet</p>
-<p>Suppresses console error messages and info messages</p>
-</li>
-
-<li>
 <p class="inlinecode">-s, --sensitive, --casesensitive</p>
 <p>The msgids inside curly-brace-references are matched case-insensitively 
 by default, the --sensitive option expands case-sensitive matches only.</p>
@@ -157,6 +152,17 @@ by default, the --sensitive option expands case-sensitive matches only.</p>
 
 <p>WARNING: Plural forms are not supported and references contained in 
   plural-form msgstrs are not counted.</p>
+</li>
+
+<li>
+<p class="inlinecode">-i <em>[path]</em>, --includeDirectory <em>[path]</em></p>
+<p>Adds a directory to the end of the search path used to locate files 
+  specified by $include directives.</p>
+</li>
+
+<li>
+<p class="inlinecode">-q, --quiet</p>
+<p>Suppresses console error messages and info messages</p>
 </li>
 
 </ul><h4>
