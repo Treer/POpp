@@ -36,6 +36,13 @@
         public void Include_DirectoryArgs() {
             // test that --includedirectory works
 
+            // Without providing an include directory, this should fail
+            int result = Program.Main(new string[] { "../../testdata/includeTest_directories.po", "../../testdata/includeTest_directories_result.po" });
+            Assert.AreEqual((int)ErrorLevel.FatalError_Internal, result, "includeTest_directories.po should fail to process unless the includedirectory is specified");
+
+            // this time it should work
+            result = Program.Main(new string[] { "--includeDirectory", "../../testdata/includePathTest", "../../testdata/includeTest_directories.po", "../../testdata/includeTest_directories_result.po" });
+            Assert.AreEqual((int)ErrorLevel.Success, result, "The file should have processed, but didn't");
         }
 
         [TestMethod]
@@ -48,6 +55,18 @@
             Assert.AreEqual((int)ErrorLevel.FatalError_Internal, result, "includeTest_missing.po should references a non-existant file, so popp should abort, but no FatalError_Internal happened");
             Assert.IsFalse(File.Exists("../../testdata/includeTest_missingresult.po"), "includeTest_missingresult.po should not have been written");
         }
+
+        [TestMethod]
+        public void Include_WorkingExample() {
+            // Instead of testing edge cases and failure results, lets actually test everything going right
+
+            File.Delete("../../testdata/includeTest_3_result.txt");
+
+            int result = Program.Main(new string[] { "../../testdata/includeTest_3.po", "../../testdata/includeTest_3_result.po" });
+            Assert.AreEqual((int)ErrorLevel.Success, result, "includeTest_3.po should work, so popp should return success, but didn't.");
+            Assert.IsTrue(FileCompare("../../testdata/includeTest_3_result.po", "../../testdata/includeTest_3_expectedResult.po"), "includeTest_3_result.po does not match includeTest_3_expectedResult.po");
+        }
+
 
 
     }

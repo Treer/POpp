@@ -1,0 +1,7 @@
+# comment
+msgid "leaf greeting"
+msgstr "Hi! leaf"
+
+
+msgid "test references work across includes"
+msgstr "message from includeTest_3: {id:incl3 greeting}"

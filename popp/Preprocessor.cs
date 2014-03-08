@@ -621,7 +621,7 @@
                 int openingRefPos = line.IndexOf(cReferenceSignature_Start, startIndex);
                 if (openingRefPos >= 0) {
                     // check the reference isn't escaped
-                    if (openingRefPos == 0 || line[openingRefPos - 1] != '\\') {
+                    if (openingRefPos == 0 || line[openingRefPos - 1] != '\\') { // Need to fix this: Any escape slashes should be removed, and a double-slash should allow a slash to appear before an expansion
                         // check the reference has a closing "}"
                         int closingRefPos = line.IndexOf(cReferenceSignature_End, openingRefPos + cReferenceSignature_Start.Length);
 

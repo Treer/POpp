@@ -1,0 +1,19 @@
+# comment
+msgid "incl3 greeting"
+msgstr "Hi! 3"
+
+# Some harmless comments
+
+
+# or not
+#.
+msgstr "message from includeTest_3: Hi! 3"
+msgstr ""
+
+# comment
+msgid "leaf greeting"
+msgstr "Hi! leaf"
+
+
+msgid "test references work across includes"
+msgstr "message from includeTest_3: Hi! 3"

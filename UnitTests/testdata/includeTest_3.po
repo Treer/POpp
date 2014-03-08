@@ -1,0 +1,10 @@
+# comment
+msgid "incl3 greeting"
+msgstr "Hi! 3"
+
+# $include "includePathTest\includeTest_SubDir_2.po"
+#.
+msgid "include-subdir-in-a-comment test"
+msgstr ""
+
+# $include "includeTest_leaf2.po"
